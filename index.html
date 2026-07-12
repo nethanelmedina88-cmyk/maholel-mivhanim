@@ -117,6 +117,11 @@ body.night .doc{ background:#fff; color:var(--doc-ink); border-radius:10px; }
 .topic-group .subchips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:9px }
 .topic-group .sub-chip{ font-size:12px; padding:5px 11px; font-weight:500 }
 .topic-group .chip .cnt{ opacity:.55; font-size:11px; font-weight:600; margin-inline-start:3px }
+.chip:disabled{ opacity:.4; cursor:not-allowed }
+.chip .chip-ic{ display:inline-flex; align-items:center; vertical-align:-3px; margin-inline-end:5px; color:var(--teal) }
+.chip.on .chip-ic{ color:#fff }
+.chip .chip-ic svg{ width:15px; height:15px }
+.topic-group .topic-chip .chip-ic svg{ width:17px; height:17px }
 
 /* 5) שדה קלט עם תווית צפה (floating label) */
 .input-group{ position:relative; width:100%; margin-top:7px; font-family:var(--body-font); }
@@ -359,6 +364,8 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc .cover-title{font-family:var(--doc-serif); font-weight:900; font-size:28pt; color:var(--deep); text-align:center; line-height:1.05; letter-spacing:.3px}
 .doc .cover-sub{text-align:center; color:var(--doc-soft); font-weight:600; font-size:11.5pt; margin-top:6px}
 .doc .cover-rule{width:64px; height:3px; background:var(--teal); border-radius:2px; margin:9px auto 0}
+.doc .cover-school{text-align:center; color:var(--doc-soft); font-weight:700; font-size:12pt; margin-bottom:3px; letter-spacing:.3px}
+.doc .cover-note{text-align:center; color:var(--doc-soft); font-size:10.5pt; font-style:italic; margin-top:8px}
 
 /* טבלת נתונים */
 .doc table.meta{width:100%; border-collapse:collapse; margin:6mm 0 4mm; font-size:10.5pt}
@@ -516,6 +523,19 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
         <p>בחרו נושאים ומבנה, לחצו "צור מבחן", והמערכת תרכיב בחינה שלמה במתכונת בגרות — עם מחוון ותשובון מוכנים להדפסה.</p>
       </div>
       <div class="banner-logo"><span id="bannerLogo"></span></div>
+    </div>
+
+    <div class="card">
+      <h3>פרטי הבחינה</h3>
+      <div class="sub">הפרטים שיודפסו בראש הבחינה.</div>
+      <div class="grid">
+        <div class="input-group"><input id="exTitle" type="text" placeholder=" " autocomplete="off"><label>כותרת הבחינה</label></div>
+        <div class="input-group"><input id="exSchool" type="text" placeholder=" " autocomplete="off"><label>בית ספר / מוסד</label></div>
+        <div class="input-group"><input id="exClass" type="text" placeholder=" " autocomplete="off"><label>כיתה</label></div>
+        <div class="input-group"><input id="exSeason" type="text" placeholder=" " autocomplete="off"><label>מועד</label></div>
+        <div class="input-group"><input id="exDate" type="text" placeholder=" " autocomplete="off"><label>תאריך</label></div>
+        <div class="input-group"><input id="exDuration" type="number" placeholder=" "><label>משך (בדקות)</label></div>
+      </div>
     </div>
 
     <div class="card">
@@ -717,13 +737,12 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
         </div>
       </div>
       <div class="set-group">
-        <h4>כותרת הבחינה</h4>
-        <div class="grid">
-          <div class="input-group"><input id="exTitle" type="text" placeholder=" " autocomplete="off"><label>כותרת</label></div>
-          <div class="input-group"><input id="exClass" type="text" placeholder=" " autocomplete="off"><label>כיתה</label></div>
-          <div class="input-group"><input id="exSeason" type="text" placeholder=" " autocomplete="off"><label>מועד</label></div>
-          <div class="input-group"><input id="exDate" type="text" placeholder=" " autocomplete="off"><label>תאריך הבחינה</label></div>
-          <div class="input-group"><input id="exDuration" type="number" placeholder=" "><label>משך (בדקות)</label></div>
+        <h4>עזרי בנייה</h4>
+        <div class="input-group"><input id="exNote" type="text" placeholder=" " autocomplete="off"><label>הערה בראש הבחינה (אופציונלי)</label></div>
+        <div class="field" style="margin-top:14px"><label>מספר נוסחים ברירת מחדל</label><input type="number" id="defVersions" min="1" max="8" value="2"></div>
+        <div class="set-actions" style="margin-top:14px">
+          <button id="btnClearExam">איפוס הבחינה הנוכחית</button>
+          <button id="btnDupToClipboard">העתקת קישור לאתר</button>
         </div>
       </div>
       <div class="set-group">
@@ -799,7 +818,7 @@ const LOGO_SQ = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7G
 const STATE = {
   bank: [],
   branding: { name:"נתנאל מדינה", insta:"@bio_bagrut", phone:"", email:"biomedilab88@gmail.com", brand:"MediLab" },
-  examMeta: { title:"בחינה בביולוגיה", grade:"י\"א", season:"מועד א", date:"", duration:180 },
+  examMeta: { title:"בחינה בביולוגיה", school:"", grade:"י\"א", season:"מועד א", date:"", duration:180, note:"" },
   request: null,
   exam: null,
   versionCount: 1,
@@ -1169,16 +1188,20 @@ function distributeSubparts(item){
 /* =========================================================================
    7. כלל הניקוד של הפרק הרב-ברירה
    ========================================================================= */
-function mcStudentScore(correct, fullAt, sectionPoints){
-  return Math.round( Math.min(correct, fullAt) / fullAt * sectionPoints );
+/* כלל ניקוד: עד (outOf-fullAt) טעויות → מלוא הניקוד. מהטעות הבאה ואילך → יורד ניקוד על כל הטעויות. */
+function mcStudentScore(correct, fullAt, sectionPoints, outOf){
+  const total = outOf || fullAt;
+  const free  = Math.max(0, total - fullAt);   // טעויות מותרות למלוא הניקוד (למשל 3)
+  const mistakes = total - correct;
+  if(mistakes <= free) return sectionPoints;                     // עד 'free' טעויות — מלוא הניקוד
+  return Math.max(0, Math.round(sectionPoints * correct / total)); // מהטעות הבאה — ניקוד על כל הטעויות
 }
 function buildConversionTable(sec){
   const {fullAt, outOf} = sec.scoring;
   const rows = [];
-  const from = outOf;
-  const to = Math.max(0, fullAt-6);
-  for(let c=from; c>=to; c--){
-    rows.push({ correct:c, score: mcStudentScore(c, fullAt, sec.points) });
+  const to = Math.max(0, fullAt-8);
+  for(let c=outOf; c>=to; c--){
+    rows.push({ correct:c, score: mcStudentScore(c, fullAt, sec.points, outOf) });
   }
   return rows;
 }
@@ -1193,7 +1216,8 @@ function buildInstructions(exam, meta){
   const bagrut = exam.structure==="bagrut";
   const list = [];
   list.push(`משך הבחינה ${hours} שעות.`);
-  if(mc) list.push(`${bagrut?"בפרק ראשון ענו על כל השאלות":"ענו על כל שאלות הרב-ברירה"}. תשובה נכונה על ${mc.scoring.fullAt} לפחות (מתוך ${mc.scoring.outOf}) מזכה במלוא ניקוד הפרק.`);
+  if(mc){ const free = Math.max(0, mc.scoring.outOf - mc.scoring.fullAt);
+    list.push(`${bagrut?"בפרק ראשון ענו על כל השאלות":"ענו על כל שאלות הרב-ברירה"}. עד ${free} טעויות — מלוא ניקוד הפרק; מהטעות ה-${free+1} ואילך יורד הניקוד לפי מספר הטעויות.`); }
   if(open && open.choice.mode==="choose") list.push(`${bagrut?"בפרק שני ":""}ענו על ${open.choice.answer} מתוך ${open.choice.of} שאלות פתוחות.`);
   if(exam.sections.some(s=>s.type==="unseen")) list.push(`בפרק המחקר ענו על השאלות שאחרי הקטע.`);
   list.push(`כתבו בעט.${mc?" סמנו את תשובות הרב-ברירה בתשובון.":""}`);
@@ -1249,9 +1273,11 @@ function renderExamCover(exam, meta, br){
   return `
   <div class="cover-head">
     ${exam.structure==="bagrut" ? `<div class="cover-kicker">בחינה במתכונת בגרות</div>` : ""}
+    ${meta.school ? `<div class="cover-school">${esc(meta.school)}</div>` : ""}
     <div class="cover-title">${esc(meta.title)}</div>
     <div class="cover-sub">${esc(meta.grade)} · ${esc(meta.season)}</div>
     <div class="cover-rule"></div>
+    ${meta.note ? `<div class="cover-note">${esc(meta.note)}</div>` : ""}
   </div>
   <table class="meta">
     <tr><th>כיתה</th><th>מועד</th><th>תאריך</th><th>משך הבחינה</th><th>חומר עזר</th><th>ניקוד כולל</th></tr>
@@ -1452,6 +1478,42 @@ document.querySelectorAll(".steps button").forEach(b=>{
 });
 
 /* --- בחירת תת-נושאים (צ'יפים) --- */
+/* ===== אייקוני ביולוגיה לתתי-הנושאים (SVG מוטמע, currentColor) ===== */
+const _S='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">';
+const ICONS={
+  cell:_S+'<circle cx="10" cy="10" r="7.3"/><circle cx="10" cy="10" r="2.6"/></svg>',
+  enzyme:_S+'<circle cx="6" cy="13" r="2.1"/><circle cx="14" cy="13" r="2.1"/><circle cx="10" cy="6" r="2.1"/><path d="M8 12.2l1.2-4M12 12.2l-1.2-4M8 13h4"/></svg>',
+  respire:_S+'<path d="M10 3c0 3 4 3.5 4 8a4 4 0 1 1-8 0c0-2.2 1-3 2-4 .3 1.8 2 1.6 2 0z"/></svg>',
+  leaf:_S+'<path d="M5 15c0-6 5-11 11-11 0 6-5 11-11 11z"/><path d="M6 14L14.5 6"/></svg>',
+  dna:_S+'<path d="M7 3c0 5 6 7 6 14M13 3c0 5-6 7-6 14"/><path d="M7.6 6h4.8M8.7 10h2.6M7.6 14h4.8"/></svg>',
+  divide:_S+'<circle cx="7" cy="10" r="4.4"/><circle cx="13" cy="10" r="4.4"/></svg>',
+  pea:_S+'<path d="M4 7c3.5 6.5 8.5 6.5 12 0"/><circle cx="8" cy="9.2" r="1.2"/><circle cx="10" cy="9.7" r="1.2"/><circle cx="12" cy="9.2" r="1.2"/></svg>',
+  homeo:_S+'<path d="M9 4a1 1 0 0 1 2 0v7.6a3 3 0 1 1-2 0z"/><circle cx="10" cy="14" r="1.3" fill="currentColor" stroke="none"/></svg>',
+  digest:_S+'<path d="M8 3v4c0 3 5.5 1.8 5.5 6a3.7 3.7 0 0 1-7.4 0"/></svg>',
+  lungs:_S+'<path d="M10 3v7"/><path d="M10 8c-1-1-2.5-1-3.4.2C5.4 9.6 5 12 5 14.2 5 16 8 16 8 14V10.5C8 9.4 9 8.7 10 8z"/><path d="M10 8c1-1 2.5-1 3.4.2C14.6 9.6 15 12 15 14.2 15 16 12 16 12 14V10.5C12 9.4 11 8.7 10 8z"/></svg>',
+  shield:_S+'<path d="M10 3l6 2.2v4.6c0 4-3 6-6 7.2-3-1.2-6-3.2-6-7.2V5.2z"/></svg>',
+  kidney:_S+'<path d="M10 3.5c3 4 5 5.8 5 8.7a5 5 0 1 1-10 0c0-2.9 2-4.7 5-8.7z"/></svg>',
+  brain:_S+'<path d="M10 4.5a3 3 0 0 0-3 3 2.6 2.6 0 0 0-.8 5c.3 1.8 2 2.5 3.8 2.3zM10 4.5a3 3 0 0 1 3 3 2.6 2.6 0 0 1 .8 5c-.3 1.8-2 2.5-3.8 2.3"/></svg>',
+  gland:_S+'<circle cx="10" cy="7" r="3.4"/><path d="M10 10.4v3.2M8 16h4"/></svg>',
+  repro:_S+'<circle cx="8" cy="11" r="3.4"/><path d="M8 14.4V18M6.2 16.4h3.6"/><path d="M13 8l3-3M13.5 5H16v2.5"/></svg>',
+  heart:_S+'<path d="M10 16.5S3.2 12 3.2 7.6A3.2 3.2 0 0 1 10 6a3.2 3.2 0 0 1 6.8 1.6C16.8 12 10 16.5 10 16.5z"/></svg>',
+  globe:_S+'<circle cx="10" cy="10" r="7.3"/><path d="M2.8 10h14.4M10 2.7c3 3 3 11.6 0 14.6M10 2.7c-3 3-3 11.6 0 14.6"/></svg>',
+  flow:_S+'<path d="M5 8.5a5 5 0 0 1 9.2-2"/><path d="M15 11.5a5 5 0 0 1-9.2 2"/><path d="M14.5 3v3.2h-3M5.5 17v-3.2h3"/></svg>',
+  link:_S+'<path d="M8.3 11.7l3.4-3.4"/><path d="M7 10.3l-1 1a2.6 2.6 0 0 0 3.7 3.7l1-1M13 9.7l1-1a2.6 2.6 0 0 0-3.7-3.7l-1 1"/></svg>',
+  tree:_S+'<path d="M10 17v-4"/><path d="M10 13c-3 0-5-2-5-4.3A4 4 0 0 1 8 5a4 4 0 0 1 7.6 1.4A3.4 3.4 0 0 1 15 13z"/></svg>',
+  evolution:_S+'<circle cx="4.5" cy="15.5" r="1.4"/><circle cx="12" cy="5" r="1.4"/><circle cx="14" cy="11.5" r="1.4"/><path d="M5.5 14.5C8 12 8.5 8 10.5 6M9 8c1.5 1.8 3 2.6 4 2.9"/></svg>',
+  human:_S+'<path d="M4 17h12"/><path d="M6 17v-6h2.5l1.2-2H12v8"/><path d="M14 17v-4h2v4"/></svg>',
+  bacteria:_S+'<rect x="4.5" y="8" width="9" height="4" rx="2" transform="rotate(-22 9 10)"/><path d="M13.5 5.5l1.2-1.1M14.7 8.6l1.6.2M5.5 14l-1.2 1.2M4 10.6l-1.5.4"/></svg>',
+  microbiome:_S+'<path d="M6 4c4.5 0 4.5 4 0 4s-4.5 4 0 4 4.5 4 0 4"/><circle cx="13" cy="7" r="1.1"/><circle cx="14.5" cy="12" r="1.1"/></svg>',
+  resist:_S+'<rect x="3.5" y="8" width="13" height="5" rx="2.5" transform="rotate(-32 10 10)"/><path d="M9.8 5.7l3.2 5.6"/></svg>',
+  virus:_S+'<circle cx="10" cy="10" r="4.3"/><path d="M10 2.2v2.3M10 15.5v2.3M2.2 10h2.3M15.5 10h2.3M4.6 4.6l1.6 1.6M13.8 13.8l1.6 1.6M15.4 4.6l-1.6 1.6M6.2 13.8l-1.6 1.6"/></svg>',
+  paw:_S+'<circle cx="6" cy="8.5" r="1.5"/><circle cx="10" cy="6.8" r="1.5"/><circle cx="14" cy="8.5" r="1.5"/><path d="M7 13a3 3 0 0 1 6 0 2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/></svg>'
+};
+ICONS.gene=ICONS.dna;
+const SUB_ICON={'מאפייני חיים':'cell','מעבר חומרים':'cell','חלבונים ואנזימים':'enzyme','נשימה תאית':'respire','פוטוסינתזה':'leaf','החומר התורשתי':'dna','מחזור התא (מיטוזה/מיוזה)':'divide','מדנ"א לחלבון':'dna','תורשה מנדלית':'pea','הומאוסטזיס':'homeo','מערכת העיכול והכבד':'digest','מערכת הנשימה':'lungs','מערכת החיסון':'shield','מערכת השתן':'kidney','מערכת העצבים':'brain','מערכת ההפרשה הפנימית':'gland','מערכת הרביה':'repro','מערכת ההובלה':'heart','מאפייני הסביבה':'globe','מעבר חומרים ואנרגיה':'flow','יחסי גומלין':'link','התאמה לבית גידול':'tree','אבולוציה':'evolution','השפעת האדם':'human','התרבות חיידקים':'bacteria','מיקרוביום':'microbiome','חיידקים מעוררי מחלות':'bacteria','עמידויות לאנטיביוטיקה':'resist','נגיפים':'virus','הנדסה גנטית':'gene','פיזיולוגיה השוואתית':'paw'};
+const TOPIC_ICON={'התא':'cell','גוף האדם':'heart','אקולוגיה':'globe','מיקרוביולוגיה':'bacteria','הנדסה גנטית':'gene','פיזיולוגיה השוואתית':'paw'};
+function iconFor(name,topic){ return ICONS[SUB_ICON[name]] || ICONS[TOPIC_ICON[topic]] || ICONS.cell; }
+
 let selectedSubtopics = [];
 function renderSubtopicChips(){
   const wrap = document.getElementById("subtopicChips");
@@ -1466,9 +1528,9 @@ function renderSubtopicChips(){
     wrap.innerHTML = Object.keys(tax).filter(t=>tc[t]).map(topic=>{
       const subs = (tax[topic]||[]).filter(s=>sc[s]);
       const subHtml = subs.length
-        ? `<div class="subchips">${subs.map(s=>`<button class="chip sub-chip" data-sel="${esc(s)}">${esc(s)} <span class="cnt">${sc[s]}</span></button>`).join("")}</div>`
+        ? `<div class="subchips">${subs.map(s=>`<button class="chip sub-chip" data-sel="${esc(s)}"><span class="chip-ic">${iconFor(s,topic)}</span>${esc(s)} <span class="cnt">${sc[s]}</span></button>`).join("")}</div>`
         : "";
-      return `<div class="topic-group"><button class="chip topic-chip" data-sel="${esc(topic)}">${esc(topic)} <span class="cnt">${tc[topic]}</span></button>${subHtml}</div>`;
+      return `<div class="topic-group"><button class="chip topic-chip" data-sel="${esc(topic)}"><span class="chip-ic">${iconFor(topic,topic)}</span>${esc(topic)} <span class="cnt">${tc[topic]}</span></button>${subHtml}</div>`;
     }).join("");
   }
   wrap.querySelectorAll(".chip").forEach(c=>{
@@ -1517,11 +1579,21 @@ function renderCustom(){
     row.querySelector('[data-role="points"]').addEventListener("change",e=>{ customSecs[i].points=Math.max(1,+e.target.value||1); renderCustom(); });
     row.querySelector('[data-role="del"]').addEventListener("click",()=>{ customSecs.splice(i,1); if(!customSecs.length) customSecs.push({type:"mc",count:10,points:40}); renderCustom(); });
   });
+  // השבתת כפתור הוספה לסוג שכבר קיים (פרק יחיד מכל סוג)
+  const present = new Set(customSecs.map(s=>s.type));
+  [["addSecMc","mc"],["addSecOpen","open"],["addSecUnseen","unseen"],["addSecExp","expansion"]].forEach(([id,t])=>{
+    const btn=document.getElementById(id); if(btn) btn.disabled = present.has(t);
+  });
 }
-document.getElementById("addSecMc").addEventListener("click",()=>{ customSecs.push({type:"mc",count:10,points:30}); renderCustom(); });
-document.getElementById("addSecOpen").addEventListener("click",()=>{ customSecs.push({type:"open",count:4,points:40}); renderCustom(); });
-document.getElementById("addSecUnseen").addEventListener("click",()=>{ customSecs.push({type:"unseen",count:1,points:18}); renderCustom(); });
-document.getElementById("addSecExp").addEventListener("click",()=>{ customSecs.push({type:"expansion",count:2,points:15}); renderCustom(); });
+/* פרק יחיד מכל סוג בלבד */
+function addSecOnce(type, count, points){
+  if(customSecs.some(s=>s.type===type)) return;
+  customSecs.push({type, count, points}); renderCustom();
+}
+document.getElementById("addSecMc").addEventListener("click",()=>addSecOnce("mc",10,30));
+document.getElementById("addSecOpen").addEventListener("click",()=>addSecOnce("open",4,40));
+document.getElementById("addSecUnseen").addEventListener("click",()=>addSecOnce("unseen",1,18));
+document.getElementById("addSecExp").addEventListener("click",()=>addSecOnce("expansion",2,15));
 renderCustom();
 /* --- בורר איזון רמות חשיבה --- */
 let thinkMode = "auto";
@@ -1780,22 +1852,45 @@ document.getElementById("adminSubmit").addEventListener("click", async ()=>{
   if(typeof fillSettings==="function") try{ fillSettings(); }catch(_){}
 });
 
+function fillMeta(){
+  const m=STATE.examMeta, g=id=>document.getElementById(id);
+  if(g("exTitle")) g("exTitle").value=m.title||"";
+  if(g("exSchool")) g("exSchool").value=m.school||"";
+  if(g("exClass")) g("exClass").value=m.grade||"";
+  if(g("exSeason")) g("exSeason").value=m.season||"";
+  if(g("exDate")) g("exDate").value=m.date||"";
+  if(g("exDuration")) g("exDuration").value=m.duration||"";
+  if(g("exNote")) g("exNote").value=m.note||"";
+}
+function collectMeta(){
+  const g=id=>(document.getElementById(id)||{}).value;
+  STATE.examMeta = { title:g("exTitle"), school:g("exSchool")||"", grade:g("exClass"), season:g("exSeason"), date:g("exDate"), duration:+g("exDuration")||0, note:g("exNote")||"" };
+}
 function fillSettings(){
-  const m=STATE.examMeta;
-  exTitle.value=m.title; exClass.value=m.grade; exSeason.value=m.season; exDate.value=m.date||""; exDuration.value=m.duration;
+  fillMeta();
   const c = STATE.catalog && STATE.catalog.counts;
   document.getElementById("bankInfo").textContent = c
     ? `במאגר: ${c.mc} סגורות · ${c.open} פתוחות · ${c.research} קטעי מחקר · ${c.expansion} שאלות העמקה.`
     : `במאגר ${STATE.bank.length} שאלות · ${bankSubtopics().length} תת-נושאים.`;
 }
 // המיתוג (שם, אינסטגרם, MediLab) נעול לנתנאל מדינה — נדפס בכל בחינה כחלק פרסומי, ואינו ניתן לשינוי.
-["exTitle","exClass","exSeason","exDate","exDuration"].forEach(id=>{
-  document.getElementById(id).addEventListener("change",()=>{
-    STATE.examMeta = { title:exTitle.value, grade:exClass.value, season:exSeason.value, date:exDate.value, duration:+exDuration.value };
-    if(STATE.exam){ renderEdit(); }
-    saveLocal();
-  });
+["exTitle","exSchool","exClass","exSeason","exDate","exDuration","exNote"].forEach(id=>{
+  const el=document.getElementById(id); if(!el) return;
+  el.addEventListener("change",()=>{ collectMeta(); if(STATE.exam){ renderEdit(); } saveLocal(); });
 });
+/* עזרי בנייה בהגדרות */
+(function(){
+  const dv=document.getElementById("defVersions");
+  if(dv) dv.addEventListener("change",()=>{ const nv=document.getElementById("numVersions"); if(nv) nv.value=Math.max(1,Math.min(8,+dv.value||2)); saveLocal(); });
+  const clr=document.getElementById("btnClearExam");
+  if(clr) clr.addEventListener("click",()=>{
+    STATE.exam=null; STATE.request=null;
+    document.getElementById("stepEdit").disabled=true; document.getElementById("stepProduce").disabled=true;
+    document.getElementById("settingsModal").classList.remove("open"); go("create"); saveLocal();
+  });
+  const dup=document.getElementById("btnDupToClipboard");
+  if(dup) dup.addEventListener("click",()=>{ try{ navigator.clipboard.writeText(location.href.split("#")[0]); dup.textContent="הקישור הועתק!"; setTimeout(()=>dup.textContent="העתקת קישור לאתר",1600);}catch(e){} });
+})();
 
 /* --- ייבוא מאגר --- */
 document.getElementById("importBank").addEventListener("click",()=>document.getElementById("fileBank").click());
@@ -1944,6 +2039,7 @@ async function init(){
   const haveExternal = SERVER_URL || (window.MediLabBuilder && MediLabBuilder.hasBank());
   if(!STATE.bank.length && !haveExternal) STATE.bank = SEED_BANK.slice();
   renderSubtopicChips();
+  fillMeta();
   document.getElementById("greet").textContent = `נבנה בחינה, ${STATE.branding.name.split(" ")[0]}`;
 
   if(STATE.exam){
