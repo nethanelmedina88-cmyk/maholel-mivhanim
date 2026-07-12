@@ -570,8 +570,8 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
       <h3>מספרים ורמה</h3>
       <div class="sub">כמה שאלות מכל סוג, מהו הניקוד הכולל, ובאיזו רמת קושי.</div>
       <div class="grid">
-        <div class="field"><label>שאלות רב-ברירה</label><input type="number" id="numMc" value="20" min="0"></div>
-        <div class="field"><label>שאלות פתוחות</label><input type="number" id="numOpen" value="8" min="0"></div>
+        <div class="field"><label>שאלות רב-ברירה (מקס' 20)</label><input type="number" id="numMc" value="20" min="0" max="20"></div>
+        <div class="field"><label>שאלות פתוחות (מקס' 8)</label><input type="number" id="numOpen" value="8" min="0" max="8"></div>
         <div class="field"><label>ניקוד כולל</label><input type="number" id="totalPoints" value="100" min="10"></div>
         <div class="field"><label>מספר נוסחים</label><input type="number" id="numVersions" value="2" min="1" max="8"></div>
         <div class="field">
@@ -1559,6 +1559,7 @@ document.getElementById("structureSeg").querySelectorAll("button").forEach(b=>{
 });
 
 /* --- בונה מבחן אישי --- */
+const MAX_COUNT = { mc:20, open:8, unseen:1, expansion:1 };   // תקרת שאלות לכל סוג (מתכונת בגרות)
 let customSecs = [{type:"mc",count:15,points:40},{type:"open",count:5,points:60}];
 let customVersions = 2, customDiff = "balanced";
 function renderCustom(){
@@ -1566,7 +1567,7 @@ function renderCustom(){
   wrap.innerHTML = customSecs.map((s,i)=>`
     <div class="csec-row" data-i="${i}">
       <span class="csec-type ${s.type}">${ {mc:"רב-ברירה",open:"פתוחות",unseen:"מחקר (אנ-סין)",expansion:"נושא העמקה"}[s.type] }</span>
-      <span class="csec-f"><label>שאלות</label><input type="number" min="1" value="${s.count}" data-role="count"></span>
+      <span class="csec-f"><label>שאלות</label><input type="number" min="1" max="${MAX_COUNT[s.type]||99}" value="${s.count}" data-role="count"></span>
       <span class="csec-f"><label>ניקוד</label><input type="number" min="1" value="${s.points}" data-role="points"></span>
       <button class="csec-del" data-role="del" title="הסרת פרק">&times;</button>
     </div>`).join("");
@@ -1575,7 +1576,7 @@ function renderCustom(){
   document.getElementById("customTotal").textContent = `סה"כ ${total} נק' · ${nq} שאלות`;
   wrap.querySelectorAll(".csec-row").forEach(row=>{
     const i=+row.dataset.i;
-    row.querySelector('[data-role="count"]').addEventListener("change",e=>{ customSecs[i].count=Math.max(1,+e.target.value||1); renderCustom(); });
+    row.querySelector('[data-role="count"]').addEventListener("change",e=>{ const mx=MAX_COUNT[customSecs[i].type]||99; customSecs[i].count=Math.min(mx,Math.max(1,+e.target.value||1)); renderCustom(); });
     row.querySelector('[data-role="points"]').addEventListener("change",e=>{ customSecs[i].points=Math.max(1,+e.target.value||1); renderCustom(); });
     row.querySelector('[data-role="del"]').addEventListener("click",()=>{ customSecs.splice(i,1); if(!customSecs.length) customSecs.push({type:"mc",count:10,points:40}); renderCustom(); });
   });
@@ -1593,7 +1594,7 @@ function addSecOnce(type, count, points){
 document.getElementById("addSecMc").addEventListener("click",()=>addSecOnce("mc",10,30));
 document.getElementById("addSecOpen").addEventListener("click",()=>addSecOnce("open",4,40));
 document.getElementById("addSecUnseen").addEventListener("click",()=>addSecOnce("unseen",1,18));
-document.getElementById("addSecExp").addEventListener("click",()=>addSecOnce("expansion",2,15));
+document.getElementById("addSecExp").addEventListener("click",()=>addSecOnce("expansion",1,15));
 renderCustom();
 /* --- בורר איזון רמות חשיבה --- */
 let thinkMode = "auto";
@@ -1612,6 +1613,9 @@ document.getElementById("btnGenerate").addEventListener("click", async ()=>{
   let numMc = +document.getElementById("numMc").value;
   // ביעד ידני: מספר שאלות הרב-ברירה = סכום שלוש רמות החשיבה
   if(thinkMode==="target") numMc = think.know + think.und + think.high;
+  numMc = Math.min(20, Math.max(0, numMc));                                  // מקס' 20 (מתכונת בגרות)
+  const numOpen = Math.min(8, Math.max(0, +document.getElementById("numOpen").value||0)); // מקס' 8
+  const openAnswer = Math.min(numOpen, Math.max(1, +document.getElementById("openAnswer").value||1));
   const customSections = customSecs.map(s=>({...s}));
   const totalPoints = structure==="custom"
       ? customSections.reduce((a,s)=>a+(+s.points||0),0)
@@ -1620,13 +1624,13 @@ document.getElementById("btnGenerate").addEventListener("click", async ()=>{
     subtopics: selectedSubtopics.slice(),
     structure,
     numMc,
-    numOpen: +document.getElementById("numOpen").value,
+    numOpen,
     totalPoints,
     customSections,
     versions: Math.max(1,Math.min(8,+document.getElementById("numVersions").value)),
     difficulty: document.getElementById("difficulty").value,
     thinkMode, think,
-    openAnswer: +document.getElementById("openAnswer").value,
+    openAnswer,
     fullAt: +document.getElementById("fullAt").value,
     prodOpts
   };
