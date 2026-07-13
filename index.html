@@ -414,7 +414,7 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc .ans-lines .ln{border-bottom:1px solid #cfdbe0; height:30px}
 
 /* קטע מחקר */
-.doc .passage{border:1px solid var(--doc-hair); border-radius:6px; padding:11px 15px; margin:3mm 0; background:#f8fbfc; break-inside:avoid; position:relative; line-height:1.55}
+.doc .passage{border:1px solid var(--doc-hair); border-radius:6px; padding:11px 15px; margin:3mm 0; background:#f8fbfc; break-inside:auto; position:relative; line-height:1.55}
 .doc .passage .ptag{display:block; font-family:var(--doc-serif); font-weight:800; font-size:14pt; letter-spacing:.2px; color:var(--deep); margin-bottom:9px; padding-bottom:6px; border-bottom:1px solid var(--doc-hair)}
 
 /* איור/גרף של קטע מחקר */
@@ -477,7 +477,8 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
      פרק ארוך (או פרק שמכיל טבלה, כמו במחוון) גבוה מעמוד; אם לא נתיר לחתוך אותו
      הדפדפן דוחף אותו כולו לעמוד הבא ומשאיר עמוד כמעט ריק. לכן מתירים חיתוך פרק. */
   .psec{break-inside:auto}
-  .pq,.passage,.subpart{break-inside:avoid}
+  .pq,.subpart{break-inside:avoid}
+  .passage{break-inside:auto}
   .psec-title{break-after:avoid}
   .newpage{break-before:page}
   .doc{font-size:12pt}
