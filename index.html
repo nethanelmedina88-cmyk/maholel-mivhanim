@@ -388,13 +388,13 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc .block-h{font-family:var(--doc-serif); font-weight:800; font-size:14.5pt; color:var(--deep); margin:5mm 0 2.5mm; padding-bottom:3px; border-bottom:2px solid var(--panel-2)}
 
 /* פרק — כותרת בולטת */
-.doc .psec{margin:6mm 0 4mm}
+.doc .psec{margin:0 0 3mm}
 .doc .psec-title{display:flex; justify-content:space-between; align-items:baseline; gap:12px; border-bottom:2.2px solid var(--deep); padding:0 2px 5px; margin-bottom:3mm}
 .doc .psec-title > span:first-child{font-family:var(--doc-serif); font-weight:800; font-size:18pt; color:var(--deep)}
 .doc .psec-note{font-size:9.5pt; color:var(--doc-soft); font-weight:600; font-family:var(--doc-sans); white-space:nowrap}
 
 /* שאלה */
-.doc .pq{margin:0; padding:3.5mm 0; break-inside:avoid; border-top:1px solid #e7eef1}
+.doc .pq{margin:0; padding:2.6mm 0; break-inside:avoid; border-top:1px solid #e7eef1}
 .doc .psec .pq:first-of-type{border-top:0; padding-top:1mm}
 .doc .pq .q-line{display:flex; align-items:baseline; gap:7px}
 .doc .pq .qnum{flex-shrink:0; min-width:20px; font-family:var(--doc-serif); font-weight:800; font-size:14.5pt; color:var(--deep)}
@@ -414,13 +414,13 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc .ans-lines .ln{border-bottom:1px solid #cfdbe0; height:30px}
 
 /* קטע מחקר */
-.doc .passage{border:1px solid var(--doc-hair); border-radius:6px; padding:14px 18px; margin:4mm 0; background:#f8fbfc; break-inside:avoid; position:relative; line-height:1.62}
+.doc .passage{border:1px solid var(--doc-hair); border-radius:6px; padding:11px 15px; margin:3mm 0; background:#f8fbfc; break-inside:avoid; position:relative; line-height:1.55}
 .doc .passage .ptag{display:block; font-family:var(--doc-serif); font-weight:800; font-size:14pt; letter-spacing:.2px; color:var(--deep); margin-bottom:9px; padding-bottom:6px; border-bottom:1px solid var(--doc-hair)}
 
 /* איור/גרף של קטע מחקר */
-.doc .pfig{margin:3mm auto; text-align:center; break-inside:avoid; max-width:100%; overflow:hidden}
-.doc .pfig img{display:block; margin:0 auto; max-width:100%; max-height:68mm; width:auto; height:auto; object-fit:contain; box-sizing:border-box; border:1px solid var(--doc-hair); border-radius:6px; padding:5px; background:#fff}
-.doc .pfig figcaption{font-size:9pt; color:var(--doc-soft); margin-top:3px; font-weight:600}
+.doc .pfig{margin:2.5mm auto; text-align:center; break-inside:avoid; max-width:120mm; overflow:hidden}
+.doc .pfig img{display:block; margin:0 auto; max-width:100%; max-height:46mm; width:auto; height:auto; object-fit:contain; box-sizing:border-box; border:1px solid var(--doc-hair); border-radius:5px; padding:3px; background:#fff}
+.doc .pfig figcaption{font-size:8.5pt; color:var(--doc-soft); margin-top:2px; font-weight:600}
 /* שאלה עם איור/ים רשאית להישבר בין עמודים (למנוע רווחים ענקיים) */
 .doc .pq:has(.pfig){break-inside:auto}
 /* גיבוי לדפדפנים ישנים בלי :has() — האיור לעולם לא יחרוג מרוחב העמוד */
@@ -610,7 +610,7 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
       <div class="sub">מה לכלול בבחינה המודפסת.</div>
       <div class="prod-opts" id="prodChips">
         <label class="uv-switch-wrap">
-          <input type="checkbox" class="uv-switch-input" id="opt-lines" data-opt="lines" checked>
+          <input type="checkbox" class="uv-switch-input" id="opt-lines" data-opt="lines">
           <span class="uv-switch"></span>
           <span>שורות לכתיבת תשובה בפתוחות</span>
         </label>
@@ -1364,10 +1364,9 @@ function buildExamDoc(version, vIndex){
   const meta = STATE.examMeta, br = STATE.branding;
   let html = `<div class="doc">`;
   html += renderExamCover(version, meta, br);
-  // הפרקים עצמם עטופים ב-div ששובר עמוד לפניו (לא div ריק — div ריק יוצר עמוד ריק ב-Chrome)
-  html += `<div class="newpage">`;
-  version.sections.forEach(sec=>{ html += renderSectionQuestions(sec, "exam", br); });
-  html += `</div>`;
+  // כל פרק בעמוד משלו (התוכן נושא את שבירת-העמוד — div ריק היה יוצר עמוד ריק ב-Chrome).
+  // בתוך פרק אין שבירות מאולצות, כך שאין רווחי-עמוד בין חלקי אותו פרק.
+  version.sections.forEach(sec=>{ html += `<div class="newpage">` + renderSectionQuestions(sec, "exam", br) + `</div>`; });
   // דף תשובון בסוף — כולל "בהצלחה!" והלוגו בתוכו (כדי שהכול יישאר בעמוד אחד)
   if(STATE.request.prodOpts.includes("sheet")){
     html += `<div class="newpage">` + buildSheetInner(version, vIndex) + `</div>`;
