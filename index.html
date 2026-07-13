@@ -447,8 +447,8 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc .passage .ptag{display:block; font-family:var(--doc-serif); font-weight:800; font-size:14pt; letter-spacing:.2px; color:var(--deep); margin-bottom:9px; padding-bottom:6px; border-bottom:1px solid var(--doc-hair)}
 
 /* איור/גרף של קטע מחקר */
-.doc .pfig{margin:2.5mm auto; text-align:center; break-inside:avoid; max-width:120mm; overflow:hidden}
-.doc .pfig img{display:block; margin:0 auto; max-width:100%; max-height:46mm; width:auto; height:auto; object-fit:contain; box-sizing:border-box; border:1px solid var(--doc-hair); border-radius:5px; padding:3px; background:#fff}
+.doc .pfig{margin:3mm auto; text-align:center; break-inside:avoid; max-width:152mm; overflow:hidden}
+.doc .pfig img{display:block; margin:0 auto; max-width:100%; max-height:64mm; width:auto; height:auto; object-fit:contain; box-sizing:border-box; border:1px solid var(--doc-hair); border-radius:5px; padding:4px; background:#fff}
 .doc .pfig figcaption{font-size:8.5pt; color:var(--doc-soft); margin-top:2px; font-weight:600}
 /* שאלה עם איור/ים רשאית להישבר בין עמודים (למנוע רווחים ענקיים) */
 .doc .pq:has(.pfig){break-inside:auto}
@@ -1353,11 +1353,13 @@ function renderSectionQuestions(sec, mode, br){
   if(sec.type==="expansion" && sec.topics && sec.topics.length){
     html += `<div class="passage"><div class="ptag">בחירה</div><b>בחרו נושא אחד</b> מבין ${sec.topics.length} הנושאים הבאים, וענו על שאלת החובה ועל שאלה אחת נוספת מאותו נושא בלבד.</div>`;
     sec.topics.forEach(t=>{
-      html += `<div class="block-h">נושא ${esc(t.num)} — ${esc(t.name)}</div>`;
+      // כל נושא בעמוד משלו ושלם (לא נחתך)
+      html += `<div class="newpage topic-block"><div class="block-h">נושא ${esc(t.num)} — ${esc(t.name)}</div>`;
       (t.items||[]).forEach((it,i)=>{
         const qline = `<div class="q-line"><span class="qnum">${i+1}.</span><span class="q-text">${i===0?'<b>שאלת חובה. </b>':''}${esc(it.question)}</span><span class="qpts">${it.points} נק'</span></div>`;
         html += `<div class="pq">${qline}${bodyHtml(it)}</div>`;
       });
+      html += `</div>`;
     });
     return html + `</div>`;
   }
