@@ -1258,7 +1258,12 @@ function makeVersion(exam, vIndex){
   const rnd = rng(1000 + vIndex*97);
   const clone = JSON.parse(JSON.stringify(exam));
   clone.sections.forEach(sec=>{
-    sec.items = shuffle(sec.items, rnd);
+    // ערבוב שאלות רק בפרקים שסדר השאלות בהם אינו מהותי (סגורות/פתוחות).
+    // באנסין השאלות מפנות לקטע ולגרפים לפי סדר (28→29→30), ובהעמקה יש שאלת חובה
+    // ראשונה — לכן שם שומרים על הסדר המקורי.
+    if(sec.type==="mc" || sec.type==="open"){
+      sec.items = shuffle(sec.items, rnd);
+    }
     if(sec.type==="mc"){
       sec.items.forEach(it=>{
         if(!it.options) return;
