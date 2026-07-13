@@ -218,7 +218,7 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .banner .banner-logo{position:relative; z-index:1; flex-shrink:0; background:#fff; border-radius:22px; padding:12px; box-shadow:0 14px 34px rgba(0,0,0,.24); animation:logo-float 5.5s ease-in-out infinite}
 .banner .banner-logo::before{content:""; position:absolute; inset:-22px; border-radius:36px; z-index:-1;
   background:radial-gradient(circle, rgba(72,232,216,.75), rgba(72,232,216,.15) 55%, transparent 72%); filter:blur(13px); animation:logo-glow 3.6s ease-in-out infinite}
-.banner .banner-logo span{display:block; width:150px; height:150px; background-size:cover; background-repeat:no-repeat; background-position:center; border-radius:14px; position:relative; overflow:hidden}
+.banner .banner-logo span{display:block; width:212px; height:84px; background-size:contain; background-repeat:no-repeat; background-position:center; border-radius:10px; position:relative; overflow:hidden}
 .banner .banner-logo span::after{content:""; position:absolute; top:0; left:-75%; width:55%; height:100%; pointer-events:none;
   background:linear-gradient(105deg, transparent, rgba(255,255,255,.6), transparent); transform:skewX(-18deg); animation:logo-shine 6.5s ease-in-out infinite}
 @keyframes logo-float{0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)}}
@@ -475,7 +475,7 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc table.sheet th{background:var(--deep); color:#fff; font-weight:700; font-size:12.5pt}
 .doc table.sheet td.qn{background:var(--panel); font-weight:700; color:var(--deep); width:56px; font-size:12.5pt}
 .doc .cup-center{display:flex; justify-content:center; margin:4mm 0 0}
-.doc .cup-center svg,.doc .cup-center img{width:300px; height:300px}
+.doc .cup-center svg,.doc .cup-center img{max-width:300px; width:auto; height:auto}
 .doc .good-luck{text-align:center; font-family:var(--doc-serif); font-weight:700; font-size:19pt; color:var(--green-700); margin:4mm 0 0}
 
 .preview-scale .doc{font-size:11pt}
@@ -1461,7 +1461,7 @@ function buildSheetInner(version, vIndex){
   html += `<div class="sheet-tables">${tableFor(1,half)}${tableFor(half+1,n)}</div>`;
   html += `<div class="good-luck">בהצלחה!</div>`;
   // הלוגו הריבועי ממורכז בתחתית העמוד
-  html += `<div class="cup-center"><img src="${LOGO_SQ}" alt="MediLab"></div>`;
+  html += `<div class="cup-center"><img src="${LOGO_HDR}" alt="MediLab"></div>`;
   return html;
 }
 function buildSheetDoc(version, vIndex){
@@ -2058,13 +2058,13 @@ async function init(){
   applyNight(localStorage.getItem(NIGHT_KEY)==="1");
   refreshAdminEntry();
   document.getElementById("topLogo").style.backgroundImage = `url('logo1-flask.png')`;  // בקבוק חד; ה-MediLab וה-powered מוצגים כטקסט
-  const bl=document.getElementById("bannerLogo"); if(bl) bl.style.backgroundImage = `url('${LOGO_SQ}')`;
+  const bl=document.getElementById("bannerLogo"); if(bl) bl.style.backgroundImage = `url('${LOGO_HDR}')`;
   // בפוטר: תמונה אישית של נתנאל אם קיים הקובץ netanel.jpg; אחרת נופל חזרה ללוגו
   const pl=document.getElementById("promoLogo");
   if(pl){
     const probe=new Image();
     probe.onload=()=>{ pl.style.backgroundImage=`url('netanel.jpg')`; pl.classList.add("has-photo"); };
-    probe.onerror=()=>{ pl.style.backgroundImage=`url('${LOGO_SQ}')`; };
+    probe.onerror=()=>{ pl.style.backgroundImage=`url('${LOGO_HDR}')`; };
     probe.src="netanel.jpg?"+Date.now();
   }
 
