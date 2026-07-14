@@ -231,6 +231,13 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 
 /* ===== צ'יפים ===== */
 .chips{display:flex; flex-wrap:wrap; gap:8px}
+/* בורר קטע-המחקר */
+#unseenPick{ width:100%; padding:11px 13px; border:1.5px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); font-size:14.5px; font-family:inherit; cursor:pointer }
+#unseenPick:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(23,162,184,.14) }
+.unseen-topics{ display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:11px; min-height:4px }
+.unseen-topics .ut-lbl{ font-size:12.5px; color:var(--muted); font-weight:600 }
+.unseen-topics .ut-chip{ font-size:12.5px; font-weight:600; color:var(--deep); background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:4px 11px }
+.unseen-topics .ut-nq{ font-size:11.5px; color:var(--muted); margin-inline-start:auto; font-weight:600 }
 .chip{
   padding:8px 16px; border-radius:22px; border:1.5px solid var(--line);
   background:var(--white); color:var(--ink); font-size:13px; font-weight:500; transition:.16s ease;
@@ -582,6 +589,13 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
         <button data-val="bagrut" class="on">מתכונת בגרות</button>
         <button data-val="custom">מבחן בעריכה אישית</button>
       </div>
+    </div>
+
+    <div class="card" id="unseenCard">
+      <h3>קטע המחקר (אנ-סין)</h3>
+      <div class="sub">בחרו קטע מחקר ספציפי — לצד כל קטע מוצגים הנושאים הנשאלים בו. אפשר להשאיר "אקראי" והמערכת תבחר.</div>
+      <select id="unseenPick"><option value="">🎲 אקראי — המערכת בוחרת</option></select>
+      <div id="unseenTopics" class="unseen-topics"></div>
     </div>
 
     <div class="card" id="customCard" style="display:none">
@@ -992,6 +1006,7 @@ function reqToSpec(req){
     numMc:req.numMc, fullAt:req.fullAt, numOpen:req.numOpen, openAnswer:req.openAnswer,
     totalPoints:req.totalPoints, difficulty:req.difficulty,
     thinkMode:req.thinkMode, think:req.think, customSections:req.customSections,
+    chosenUnseen: STATE.chosenUnseen || "",
     seed:12345, title:(STATE.examMeta&&STATE.examMeta.title)||""
   };
 }
@@ -1021,6 +1036,27 @@ async function loadCatalog(){
       STATE.catalog = MediLabBuilder.catalog();
     }
   }catch(e){ console.warn("catalog load failed", e); }
+  renderUnseenPicker();
+}
+/* בורר קטע-המחקר (אנ-סין) — המורה בוחר קטע ורואה את הנושאים הנשאלים בו */
+function renderUnseenPicker(){
+  const sel = document.getElementById("unseenPick");
+  const box = document.getElementById("unseenTopics");
+  if(!sel) return;
+  const list = (STATE.catalog && STATE.catalog.research) || [];
+  if(!list.length){ document.getElementById("unseenCard").style.display="none"; return; }
+  sel.innerHTML = '<option value="">🎲 אקראי — המערכת בוחרת</option>' +
+    list.map(r=>`<option value="${esc(r.id)}">${r.year?r.year+" · ":""}${esc(r.title)}</option>`).join("");
+  const showTopics = ()=>{
+    const r = list.find(x=>x.id===sel.value);
+    STATE.chosenUnseen = sel.value || "";
+    if(r && r.topics && r.topics.length){
+      box.innerHTML = `<span class="ut-lbl">נושאים בקטע זה:</span> ` +
+        r.topics.map(t=>`<span class="ut-chip">${esc(t)}</span>`).join("") +
+        (r.nq?`<span class="ut-nq">${r.nq} שאלות</span>`:"");
+    } else box.innerHTML = "";
+  };
+  sel.onchange = showTopics; showTopics();
 }
 function bankSubtopics(){
   if(STATE.catalog && STATE.catalog.taxonomy) return Object.keys(STATE.catalog.taxonomy);
