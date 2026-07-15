@@ -1518,8 +1518,8 @@ function buildSheetInner(version, vIndex){
   html += `<p style="text-align:center;color:var(--doc-soft);font-size:10.5pt;margin:0 0 2mm">סמנו בעט X במשבצת שמתחת לאות התשובה הנכונה.</p>`;
   html += `<div class="sheet-tables">${tableFor(1,half)}${tableFor(half+1,n)}</div>`;
   html += `<div class="good-luck">בהצלחה!</div>`;
-  // הלוגו הריבועי ממורכז ונדחף לתחתית העמוד (margin-top:auto ב-.sheet-page)
-  html += `<div class="cup-center"><img src="${LOGO_HDR}" alt="MediLab"></div>`;
+  // הלוגו הריבועי (logo2) ממורכז ונדחף לתחתית העמוד (margin-top:auto ב-.sheet-page)
+  html += `<div class="cup-center"><img src="${LOGO_SQ}" alt="MediLab"></div>`;
   return html + `</div>`;
 }
 function buildSheetDoc(version, vIndex){
