@@ -341,6 +341,7 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 
 .qlist{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; max-height:78vh; overflow:auto}
 .qsec-title{font-weight:700; color:var(--green); font-size:13px; margin:12px 0 6px; padding-bottom:4px; border-bottom:2px solid var(--panel)}
+.qsub-title{font-weight:700; color:var(--deep); font-size:12px; margin:8px 0 3px 10px; opacity:.85}
 .qrow{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px dashed var(--line); font-size:12px}
 .qrow .qtxt{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted)}
 .qrow input{width:52px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; text-align:center}
@@ -457,8 +458,8 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc .pfig{margin:3mm auto; text-align:center; break-inside:avoid; max-width:152mm; overflow:hidden}
 .doc .pfig img{display:block; margin:0 auto; max-width:100%; max-height:64mm; width:auto; height:auto; object-fit:contain; box-sizing:border-box; border:1px solid var(--doc-hair); border-radius:5px; padding:4px; background:#fff}
 .doc .pfig figcaption{font-size:8.5pt; color:var(--doc-soft); margin-top:2px; font-weight:600}
-/* שאלה עם איור/ים רשאית להישבר בין עמודים (למנוע רווחים ענקיים) */
-.doc .pq:has(.pfig){break-inside:auto}
+/* שאלה עם איור/ים נשארת שלמה — הגזע, האיור והסעיפים לא נחתכים בין עמודים */
+.doc .pq:has(.pfig){break-inside:avoid}
 /* גיבוי לדפדפנים ישנים בלי :has() — האיור לעולם לא יחרוג מרוחב העמוד */
 .doc img{max-width:100%; box-sizing:border-box}
 
@@ -483,6 +484,10 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc table.sheet td.qn{background:var(--panel); font-weight:700; color:var(--deep); width:56px; font-size:12.5pt}
 .doc .cup-center{display:flex; justify-content:center; margin:4mm 0 0}
 .doc .cup-center svg,.doc .cup-center img{max-width:300px; width:auto; height:auto}
+/* דף התשובון: התוכן ממלא את גובה העמוד, והלוגו נדחף תמיד לתחתית */
+.doc .sheet-page{display:flex; flex-direction:column}
+.doc .sheet-page .cup-center{margin-top:auto; padding-top:6mm}
+@media print{ .doc .sheet-page{min-height:232mm} }
 .doc .good-luck{text-align:center; font-family:var(--doc-serif); font-weight:700; font-size:19pt; color:var(--green-700); margin:4mm 0 0}
 
 .preview-scale .doc{font-size:11pt}
@@ -1027,6 +1032,21 @@ async function requestExam(req){
   // 3) גיבוי אחרון — מאגר ההדגמה המובנה
   return generateExam(req);
 }
+/* מבקש שאלה חלופית אחת (החלפה) — שרת מחזיר שאלה בודדת בלבד, המאגר לא נחשף */
+async function requestSwap(spec){
+  spec.action = "swap";
+  if(SERVER_URL){
+    const r = await fetch(SERVER_URL, { method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(spec) });
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error||"swap error");
+    return d.question;
+  }
+  if(window.MediLabBuilder && MediLabBuilder.hasBank() && MediLabBuilder.swap){
+    return MediLabBuilder.swap(spec);
+  }
+  return null;
+}
 async function loadCatalog(){
   try{
     if(SERVER_URL){
@@ -1388,9 +1408,9 @@ function renderSectionQuestions(sec, mode, br){
   // ---- פרק העמקה: שלושה נושאים, התלמיד בוחר אחד (כמו בבגרות) ----
   if(sec.type==="expansion" && sec.topics && sec.topics.length){
     html += `<div class="passage"><div class="ptag">בחירה</div><b>בחרו נושא אחד</b> מבין ${sec.topics.length} הנושאים הבאים, וענו על שאלת החובה ועל שאלה אחת נוספת מאותו נושא בלבד.</div>`;
-    sec.topics.forEach(t=>{
-      // כל נושא בעמוד משלו ושלם (לא נחתך)
-      html += `<div class="newpage topic-block"><div class="block-h">נושא ${esc(t.num)} — ${esc(t.name)}</div>`;
+    sec.topics.forEach((t,ti)=>{
+      // הנושא הראשון מיד אחרי כותרת הפרק (בלי עמוד ריק); שאר הנושאים כל אחד בעמוד משלו ושלם
+      html += `<div class="${ti===0?'topic-block':'newpage topic-block'}"><div class="block-h">נושא ${esc(t.num)} — ${esc(t.name)}</div>`;
       (t.items||[]).forEach((it,i)=>{
         const qline = `<div class="q-line"><span class="qnum">${i+1}.</span><span class="q-text">${i===0?'<b>שאלת חובה. </b>':''}${esc(it.question)}</span><span class="qpts">${it.points} נק'</span></div>`;
         html += `<div class="pq">${qline}${bodyHtml(it)}</div>`;
@@ -1494,13 +1514,13 @@ function buildSheetInner(version, vIndex){
     }
     return t+`</table>`;
   };
-  let html = `<div class="cover-head"><div class="cover-kicker">גיליון סימון תשובות</div><div class="cover-title">תשובון</div><div class="cover-sub">נוסח ${VLETTER(vIndex)} · פרק ראשון</div><div class="cover-rule"></div></div>`;
+  let html = `<div class="sheet-page"><div class="cover-head"><div class="cover-kicker">גיליון סימון תשובות</div><div class="cover-title">תשובון</div><div class="cover-sub">נוסח ${VLETTER(vIndex)} · פרק ראשון</div><div class="cover-rule"></div></div>`;
   html += `<p style="text-align:center;color:var(--doc-soft);font-size:10.5pt;margin:0 0 2mm">סמנו בעט X במשבצת שמתחת לאות התשובה הנכונה.</p>`;
   html += `<div class="sheet-tables">${tableFor(1,half)}${tableFor(half+1,n)}</div>`;
   html += `<div class="good-luck">בהצלחה!</div>`;
-  // הלוגו הריבועי ממורכז בתחתית העמוד
+  // הלוגו הריבועי ממורכז ונדחף לתחתית העמוד (margin-top:auto ב-.sheet-page)
   html += `<div class="cup-center"><img src="${LOGO_HDR}" alt="MediLab"></div>`;
-  return html;
+  return html + `</div>`;
 }
 function buildSheetDoc(version, vIndex){
   return `<div class="doc">${buildSheetInner(version, vIndex)}</div>`;
@@ -1779,54 +1799,103 @@ function renderMeter(){
   const bb = document.getElementById("btnBalance");
   if(bb) bb.addEventListener("click",()=>{ balanceScore(STATE.exam, target); renderEdit(); saveLocal(); });
 }
+function qrowHtml(si, qi, it, extra){
+  let badges = "";
+  if(it.required) badges += `<span class="qbadge think">חובה</span>`;
+  if(it.thinkingLevel) badges += `<span class="qbadge think">${esc(it.thinkingLevel)}</span>`;
+  if(it.difficultyBand) badges += `<span class="qbadge d${it.difficulty||2}">${esc(it.difficultyBand)}</span>`;
+  return `<div class="qrow" data-si="${si}" data-qi="${qi}" ${extra||""}>
+    <span class="qtxt">${qi+1}. ${esc(it.question)}</span>
+    <span class="qbadges">${badges}</span>
+    <input type="number" value="${it.points}" data-role="pts">
+    <button class="mini swap" data-role="swap">החלפה</button>
+    <button class="mini del" data-role="del">הסרה</button>
+  </div>`;
+}
 function renderQList(){
   const wrap = document.getElementById("qlist");
   let html = "";
   STATE.exam.sections.forEach((sec,si)=>{
     html += `<div class="qsec-title">${esc(sec.name)}</div>`;
-    sec.items.forEach((it,qi)=>{
-      const txt = it.type==="mc" ? it.question : it.question;
-      let badges = "";
-      if(it.thinkingLevel) badges += `<span class="qbadge think">${esc(it.thinkingLevel)}</span>`;
-      if(it.difficultyBand) badges += `<span class="qbadge d${it.difficulty||2}">${esc(it.difficultyBand)}</span>`;
-      html += `<div class="qrow" data-si="${si}" data-qi="${qi}">
-        <span class="qtxt">${qi+1}. ${esc(txt)}</span>
-        <span class="qbadges">${badges}</span>
-        <input type="number" value="${it.points}" data-role="pts">
-        <button class="mini swap" data-role="swap">החלפה</button>
-        <button class="mini del" data-role="del">הסרה</button>
-      </div>`;
-    });
+    if(sec.type==="expansion" && sec.topics && sec.topics.length){
+      sec.topics.forEach((t,ti)=>{
+        html += `<div class="qsub-title">נושא ${esc(t.num)} — ${esc(t.name)}</div>`;
+        (t.items||[]).forEach((it,qi)=>{ html += qrowHtml(si,qi,it,`data-ti="${ti}" data-kind="exp"`); });
+      });
+      return;
+    }
+    sec.items.forEach((it,qi)=>{ html += qrowHtml(si,qi,it,`data-kind="std"`); });
   });
   wrap.innerHTML = html;
   wrap.querySelectorAll(".qrow").forEach(row=>{
-    const si=+row.dataset.si, qi=+row.dataset.qi;
+    const si=+row.dataset.si, qi=+row.dataset.qi, kind=row.dataset.kind;
+    const ti = row.dataset.ti!==undefined ? +row.dataset.ti : null;
     row.querySelector('[data-role="pts"]').addEventListener("change",e=>{
-      STATE.exam.sections[si].items[qi].points = Math.max(1,+e.target.value);
-      STATE.exam.sections[si].points = STATE.exam.sections[si].items.reduce((s,x)=>s+(x.points||0),0);
+      const val = Math.max(1,+e.target.value);
+      if(kind==="exp"){ STATE.exam.sections[si].topics[ti].items[qi].points = val; }
+      else {
+        STATE.exam.sections[si].items[qi].points = val;
+        STATE.exam.sections[si].points = STATE.exam.sections[si].items.reduce((s,x)=>s+(x.points||0),0);
+      }
       renderEdit(); saveLocal();
     });
-    row.querySelector('[data-role="swap"]').addEventListener("click",()=>{ swapItem(si,qi); });
+    row.querySelector('[data-role="swap"]').addEventListener("click",()=>{ kind==="exp" ? swapExpansionItem(si,ti,qi) : swapItem(si,qi); });
     row.querySelector('[data-role="del"]').addEventListener("click",()=>{
-      STATE.exam.sections[si].items.splice(qi,1);
-      balanceScore(STATE.exam, STATE.request.totalPoints);
-      renderEdit(); renderProduce(); saveLocal();
+      if(kind==="exp"){ removeExpansionItem(si,ti,qi); }
+      else {
+        STATE.exam.sections[si].items.splice(qi,1);
+        balanceScore(STATE.exam, STATE.request.totalPoints);
+        renderEdit(); renderProduce(); saveLocal();
+      }
     });
   });
 }
-function swapItem(si,qi){
-  if(!STATE.bank.length){ alert("החלפת שאלה בודדת אינה זמינה במצב שרת (המאגר מוגן). כדי לקבל שאלות אחרות — צרו מבחן מחדש."); return; }
+async function swapItem(si,qi){
   const sec = STATE.exam.sections[si];
   const item = sec.items[qi];
-  const usedIds = new Set(sec.items.map(x=>x.id));
-  const pool = STATE.bank.filter(q=>q.type===item.type && q.subtopic===item.subtopic && !usedIds.has(q.id));
-  const alt = pool.length ? pool : STATE.bank.filter(q=>q.type===item.type && !usedIds.has(q.id));
-  if(!alt.length){ return; }
-  const chosen = JSON.parse(JSON.stringify(alt[Math.floor(Math.random()*alt.length)]));
-  chosen.points = item.points;
-  if(chosen.subparts) distributeSubparts(chosen);
-  sec.items[qi] = chosen;
-  renderEdit(); saveLocal();
+  const pool = item.type==="mc" ? "mc" : (item.type==="open" ? "open" : null);
+  if(!pool){ alert("אפשר להחליף שאלות רב-ברירה ופתוחות בלבד."); return; }
+  const usedIds = sec.items.map(x=>x.id).filter(Boolean);
+  const btn = document.querySelector(`.qrow[data-si="${si}"][data-qi="${qi}"] [data-role="swap"]`);
+  if(btn){ btn.disabled=true; btn.textContent="מחליף…"; }
+  try{
+    const q = await requestSwap({ pool, subtopic:item.subtopic, thinkingLevel:item.thinkingLevel, difficulty:item.difficulty, excludeIds:usedIds, seed:(Date.now()&0x7fffffff) });
+    if(!q){ alert("לא נמצאה שאלה חלופית מתאימה במאגר."); return; }
+    q.points = item.points;
+    if(q.subparts) distributeSubparts(q);
+    sec.items[qi] = q;
+    renderEdit(); saveLocal();
+  }catch(e){ alert("ההחלפה נכשלה: "+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="החלפה"; } }
+}
+async function swapExpansionItem(si,ti,qi){
+  const sec = STATE.exam.sections[si];
+  const topic = sec.topics[ti];
+  const item = topic.items[qi];
+  const usedIds = [];
+  (sec.topics||[]).forEach(t=>(t.items||[]).forEach(x=>{ if(x.id) usedIds.push(x.id); }));
+  const btn = document.querySelector(`.qrow[data-si="${si}"][data-ti="${ti}"][data-qi="${qi}"] [data-role="swap"]`);
+  if(btn){ btn.disabled=true; btn.textContent="מחליף…"; }
+  try{
+    const q = await requestSwap({ pool:"expansion", topicNum:item.topicNum||topic.num, excludeIds:usedIds, seed:(Date.now()&0x7fffffff) });
+    if(!q){ alert("לא נמצאה שאלת העמקה חלופית באותו נושא."); return; }
+    topic.items[qi] = {
+      type:"expansion", id:q.id||"", topicNum:item.topicNum||topic.num, required:item.required,
+      subtopic:q.subtopic||"", thinkingLevel:q.thinkingLevel||"", difficulty:q.difficulty||2,
+      question:q.question||"", points:item.points,
+      subparts:(q.subparts||[]).map(s=>({label:s.label,text:s.text,points:s.points||0,criteria:s.criteria||[]}))
+    };
+    if(topic.items[qi].subparts.length) distributeSubparts(topic.items[qi]);
+    renderEdit(); saveLocal();
+  }catch(e){ alert("ההחלפה נכשלה: "+e.message); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="החלפה"; } }
+}
+function removeExpansionItem(si,ti,qi){
+  const topic = STATE.exam.sections[si].topics[ti];
+  if(topic.items[qi].required){ alert("לא ניתן להסיר את שאלת החובה — אפשר להחליף אותה בלבד."); return; }
+  if(topic.items.length<=2){ alert("בכל נושא העמקה חייבות להישאר לפחות שתי שאלות (חובה + בחירה)."); return; }
+  topic.items.splice(qi,1);
+  renderEdit(); renderProduce(); saveLocal();
 }
 document.getElementById("btnToProduce").addEventListener("click",()=>{ renderProduce(); go("produce"); });
 
