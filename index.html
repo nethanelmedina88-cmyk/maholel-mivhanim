@@ -1321,7 +1321,25 @@ function applyBalance(exam, plan){
 /* עטיפה לבנייה הראשונית של המבחן, שבה האיזון מובן מאליו */
 function balanceScore(exam, target){ applyBalance(exam, planBalance(exam, target)); }
 function distributeSection(sec){
-  if(!sec.items) return;            // פרק העמקה מהשרת מחלק ניקוד בתוך topics
+  // פרק העמקה מהשרת מחזיק את השאלות ב-topics ולא ב-items (items מגיע כמערך ריק,
+  // ולכן בדיקת !sec.items אינה תופסת אותו). התלמיד בוחר נושא אחד ועונה בו על
+  // שאלת החובה ועל שאלה אחת נוספת — לכן בכל נושא שתי השאלות הראשונות חייבות
+  // להסתכם לניקוד הפרק, אחרת הכותרת תכריז על ניקוד שהשאלות אינן מגיעות אליו.
+  if(sec.topics && sec.topics.length){
+    sec.topics.forEach(t=>{
+      const items = t.items || [];
+      if(!items.length) return;
+      const n = Math.min(2, items.length);
+      const per = Math.floor(sec.points / n);
+      let rem = sec.points - per*n;
+      items.forEach((it, idx)=>{
+        it.points = (idx < n) ? Math.max(1, per + (idx < rem ? 1 : 0)) : Math.max(1, per);
+        if(it.subparts && it.subparts.length) distributeSubparts(it);
+      });
+    });
+    return;
+  }
+  if(!sec.items || !sec.items.length) return;
   // מספר השאלות שעונים עליהן בפועל
   const answered = (sec.choice && sec.choice.mode==="choose") ? sec.choice.answer : sec.items.length;
   const n = Math.max(1, answered);
