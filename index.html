@@ -364,6 +364,31 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 /* שורת המקור — מוצגת רק במצב מורה */
 .qsrc{font-size:10.5px; color:var(--muted); margin-top:4px; padding-inline-start:10px; border-inline-start:2px solid var(--line)}
 
+/* ===== חלון בחירת שאלה חלופית ===== */
+.mdl-back{position:fixed; inset:0; background:rgba(15,69,83,.45); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px}
+.mdl{background:var(--white); border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.3); max-width:820px; width:100%; max-height:88vh; display:flex; flex-direction:column}
+.mdl-h{padding:16px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:flex-start; gap:12px}
+.mdl-h h3{margin:0; color:var(--deep); font-size:17px}
+.mdl-h .sub{font-size:12px; color:var(--muted); margin-top:3px}
+.mdl-h .x{background:none; border:none; font-size:22px; color:var(--muted); cursor:pointer; line-height:1; padding:0 4px}
+.mdl-b{padding:16px 20px; overflow:auto; flex:1}
+.mdl-f{padding:14px 20px; border-top:1px solid var(--line); display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.mdl-f .grow{margin-inline-start:auto}
+.mdl-f button{padding:10px 18px; border-radius:9px; font-weight:700; font-size:14px; cursor:pointer; border:none; font-family:inherit}
+.mdl-f .go{background:var(--deep); color:#fff}
+.mdl-f .go:disabled{opacity:.4; cursor:not-allowed}
+.mdl-f .ghost{background:var(--panel); color:var(--deep)}
+.mdl-lbl{font-size:12px; font-weight:700; color:var(--muted); margin:0 0 6px}
+.cand-cur{border:1px solid var(--line); border-radius:10px; padding:11px 13px; background:#fafcfd; margin-bottom:16px}
+.cand{border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin-bottom:9px; cursor:pointer; display:flex; gap:10px; align-items:flex-start; transition:border-color .12s, background .12s}
+.cand:hover{border-color:var(--teal); background:#f7fbfc}
+.cand.on{border-color:var(--teal); background:#eaf6f8; box-shadow:0 0 0 1px var(--teal)}
+.cand input{margin-top:4px; accent-color:var(--teal)}
+.cand-q{font-size:13.5px; color:var(--ink); line-height:1.5}
+.cand-o{font-size:12px; color:var(--muted); margin-top:5px; line-height:1.6}
+.cand-m{font-size:11px; color:var(--muted); margin-top:6px; display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+.mdl-empty{text-align:center; padding:26px 10px; color:var(--muted); font-size:14px; line-height:1.7}
+
 @media print{
   .edit-top{display:none !important}
   .qtoolbar{display:none !important}
@@ -1058,20 +1083,26 @@ async function requestExam(req){
   // 3) גיבוי אחרון — מאגר ההדגמה המובנה
   return generateExam(req);
 }
-/* מבקש שאלה חלופית אחת (החלפה) — שרת מחזיר שאלה בודדת בלבד, המאגר לא נחשף */
-async function requestSwap(spec){
+/* מבקש כמה שאלות חלופיות כדי שהמורה יבחר. השרת מחזיר רק את המועמדות
+   שהתבקשו — המאגר עצמו אינו נחשף ללקוח.
+   מחזיר {questions:[...], tier:"<לפי איזה סינון נמצאו>"} */
+async function requestCandidates(spec, count){
   spec.action = "swap";
+  spec.count = count || 3;
   if(SERVER_URL){
     const r = await fetch(SERVER_URL, { method:"POST",
       headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(spec) });
     const d = await r.json();
     if(!d.ok) throw new Error(d.error||"swap error");
-    return d.question;
+    return { questions: d.questions || (d.question ? [d.question] : []), tier: d.tier||"" };
   }
   if(window.MediLabBuilder && MediLabBuilder.hasBank() && MediLabBuilder.swap){
-    return MediLabBuilder.swap(spec);
+    const out = MediLabBuilder.swap(spec);
+    if(Array.isArray(out)) return { questions:out, tier:"" };
+    if(out && out.questions) return out;
+    return { questions: out ? [out] : [], tier:"" };
   }
-  return null;
+  return { questions:[], tier:"" };
 }
 async function loadCatalog(){
   try{
@@ -1253,7 +1284,9 @@ function generateExam(req){
 /* =========================================================================
    6. איזון ניקוד
    ========================================================================= */
-function balanceScore(exam, target){
+/* מחשב כיצד ייראה הניקוד אחרי איזון — בלי לשנות דבר.
+   מחזיר {secPoints:[...], changes:[{name, from, to}]} כדי שהמורה יראה מראש. */
+function planBalance(exam, target){
   const secs = exam.sections;
   // במבחן אישי — משקל כל פרק לפי הניקוד שהמורה קבע לו; אחרת לפי סוג הפרק
   const wOf = sec => exam.structure==="custom" ? Math.max(1,sec.points||1)
@@ -1267,11 +1300,25 @@ function balanceScore(exam, target){
   const order = raw.map((x,i)=>({i, frac:x-Math.floor(x)})).sort((a,b)=>b.frac-a.frac);
   for(let k=0;k<remainder;k++){ floors[order[k % order.length].i]++; }
 
+  const changes = [];
   secs.forEach((sec,si)=>{
-    sec.points = floors[si];
+    if((sec.points||0) !== floors[si]){
+      changes.push({ name: sec.name.split("—")[0].trim(), from: sec.points||0, to: floors[si] });
+    }
+  });
+  return { secPoints: floors, changes };
+}
+
+/* מבצע בפועל את התוכנית שהוצגה למורה */
+function applyBalance(exam, plan){
+  exam.sections.forEach((sec,si)=>{
+    sec.points = plan.secPoints[si];
     distributeSection(sec);
   });
 }
+
+/* עטיפה לבנייה הראשונית של המבחן, שבה האיזון מובן מאליו */
+function balanceScore(exam, target){ applyBalance(exam, planBalance(exam, target)); }
 function distributeSection(sec){
   if(!sec.items) return;            // פרק העמקה מהשרת מחלק ניקוד בתוך topics
   // מספר השאלות שעונים עליהן בפועל
@@ -1864,7 +1911,7 @@ function renderMeter(){
   }
   flags.innerHTML = html;
   const bb = document.getElementById("btnBalance");
-  if(bb) bb.addEventListener("click",()=>{ balanceScore(STATE.exam, target); renderEdit(); saveLocal(); });
+  if(bb) bb.addEventListener("click", ()=>confirmBalance(target));
 }
 /* מחזיר את השאלה שבמפתח הנבחר, ואת המערך שהיא יושבת בו (לצורך שינוי/הסרה) */
 function selItem(sel){
@@ -1920,6 +1967,110 @@ function removeSelected(){
   renderEdit(); renderProduce(); saveLocal();
 }
 
+/* מציג בדיוק מה ישתנה בניקוד, וממתין לאישור. שום מספר לא זז לפני כן. */
+function confirmBalance(target){
+  const plan = planBalance(STATE.exam, target);
+  if(!plan.changes.length){ alert("הניקוד כבר תואם ליעד — אין מה לאזן."); return; }
+  const rows = plan.changes.map(c=>
+    `<tr><td style="padding:6px 10px">${esc(c.name)}</td>
+         <td style="padding:6px 10px;text-align:center;font-variant-numeric:tabular-nums">${c.from} ← ${c.to}</td>
+         <td style="padding:6px 10px;text-align:center;color:${c.to>c.from?"#1c7a4f":"#b3261e"};font-weight:700">${c.to>c.from?"+":""}${c.to-c.from}</td></tr>`).join("");
+  const back = document.createElement("div");
+  back.className = "mdl-back";
+  back.innerHTML = `<div class="mdl" style="max-width:520px" role="dialog" aria-modal="true">
+    <div class="mdl-h"><div><h3>איזון ניקוד ל-${target} נקודות</h3>
+      <div class="sub">כך ישתנה הניקוד בפרקים. הניקוד בתוך כל פרק יחולק מחדש בין שאלותיו.</div></div>
+      <button class="x" data-a="close" aria-label="סגירה">✕</button></div>
+    <div class="mdl-b"><table style="width:100%;border-collapse:collapse;font-size:13.5px">
+      <thead><tr style="background:var(--panel);color:var(--deep)">
+        <th style="padding:8px 10px;text-align:right">פרק</th>
+        <th style="padding:8px 10px">ניקוד</th><th style="padding:8px 10px">שינוי</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div class="mdl-f"><span class="grow"></span>
+      <button class="ghost" data-a="close">בטל</button>
+      <button class="go" data-a="ok">אשר ואזן</button></div>
+  </div>`;
+  back.addEventListener("click", e=>{
+    if(e.target===back){ back.remove(); return; }
+    const a = (e.target.closest("[data-a]")||{}).dataset;
+    if(!a) return;
+    back.remove();
+    if(a.a==="ok"){ applyBalance(STATE.exam, plan); renderEdit(); renderProduce(); saveLocal(); }
+  });
+  document.body.appendChild(back);
+}
+
+/* ===== חלון בחירת שאלה חלופית =====
+   מציג את השאלה הנוכחית ומתחתיה מועמדות מלאות, כדי שהמורה יקרא ויבחר
+   במקום לקבל הגרלה עיוורת. onMore מביא סבב נוסף, onRelax מרפה את הסינון. */
+function openSwapDialog({title, current, candidates, tier, onPick, onMore, onRelax}){
+  const back = document.createElement("div");
+  back.className = "mdl-back";
+  const qbadges = it => {
+    let b="";
+    if(it.thinkingLevel) b += `<span class="qbadge think">${esc(it.thinkingLevel)}</span>`;
+    if(it.difficultyBand) b += `<span class="qbadge d${it.difficulty||2}">${esc(it.difficultyBand)}</span>`;
+    return b;
+  };
+  const optsOf = it => (it.options && it.options.length)
+    ? `<div class="cand-o">${it.options.map((o,i)=>`${ABCD[i]}. ${esc(o)}`).join(" &nbsp;·&nbsp; ")}</div>`
+    : (it.subparts && it.subparts.length)
+      ? `<div class="cand-o">${it.subparts.length} סעיפים: ${it.subparts.map(s=>esc(s.label)).join(" · ")}</div>` : "";
+
+  const body = candidates.length
+    ? candidates.map((q,i)=>`
+        <label class="cand${i===0?" on":""}" data-i="${i}">
+          <input type="radio" name="cand" value="${i}"${i===0?" checked":""}>
+          <div style="flex:1">
+            <div class="cand-q">${esc(q.question||"")}</div>
+            ${optsOf(q)}
+            <div class="cand-m">${qbadges(q)}<span>${esc(q.source||"")}</span></div>
+          </div>
+        </label>`).join("")
+    : `<div class="mdl-empty">לא נמצאה שאלה חלופית בסינון הנוכחי.<br>אפשר להרחיב את החיפוש לכל תת-הנושא.</div>`;
+
+  back.innerHTML = `<div class="mdl" role="dialog" aria-modal="true">
+    <div class="mdl-h">
+      <div><h3>${esc(title)}</h3>${tier?`<div class="sub">מחפש: ${esc(tier)}</div>`:""}</div>
+      <button class="x" data-a="close" aria-label="סגירה">✕</button>
+    </div>
+    <div class="mdl-b">
+      <p class="mdl-lbl">עכשיו במבחן:</p>
+      <div class="cand-cur"><div class="cand-q">${esc(current.question||"")}</div>${optsOf(current)}<div class="cand-m">${qbadges(current)}<span>${esc(current.source||"")}</span></div></div>
+      <p class="mdl-lbl">${candidates.length?"במקומה אפשר:":""}</p>
+      ${body}
+    </div>
+    <div class="mdl-f">
+      ${candidates.length?`<button class="ghost" data-a="more">⭯ הצג אחרות</button>`:""}
+      ${onRelax?`<button class="ghost" data-a="relax">חפש בכל תת-הנושא</button>`:""}
+      <span class="grow"></span>
+      <button class="ghost" data-a="close">ביטול</button>
+      <button class="go" data-a="pick"${candidates.length?"":" disabled"}>החלף בנבחרת</button>
+    </div>
+  </div>`;
+
+  const close = ()=>back.remove();
+  back.addEventListener("click", e=>{
+    if(e.target===back) return close();                       // לחיצה מחוץ לחלון
+    const lab = e.target.closest(".cand");
+    if(lab){ back.querySelectorAll(".cand").forEach(x=>x.classList.toggle("on", x===lab)); return; }
+    const a = (e.target.closest("[data-a]")||{}).dataset;
+    if(!a) return;
+    if(a.a==="close") close();
+    else if(a.a==="more"){ close(); onMore && onMore(); }
+    else if(a.a==="relax"){ close(); onRelax && onRelax(); }
+    else if(a.a==="pick"){
+      const on = back.querySelector(".cand.on");
+      if(!on) return;
+      close(); onPick(candidates[+on.dataset.i]);
+    }
+  });
+  document.addEventListener("keydown", function esc2(e){
+    if(e.key==="Escape"){ close(); document.removeEventListener("keydown", esc2); }
+  });
+  document.body.appendChild(back);
+}
+
 function undoSwap(){
   if(!STATE.undo) return;
   const {sel, item} = STATE.undo;
@@ -1928,23 +2079,31 @@ function undoSwap(){
   STATE.undo = null; STATE.sel = sel;
   renderEdit(); renderProduce(); saveLocal();
 }
-async function swapItem(si,qi){
+async function swapItem(si,qi,relax){
   const sec = STATE.exam.sections[si];
   const item = sec.items[qi];
   const pool = item.type==="mc" ? "mc" : (item.type==="open" ? "open" : null);
   if(!pool){ alert("אפשר להחליף שאלות רב-ברירה ופתוחות בלבד."); return; }
   const usedIds = sec.items.map(x=>x.id).filter(Boolean);
   const btn = document.querySelector('.qtoolbar [data-role="swap"]');
-  if(btn){ btn.disabled=true; btn.textContent="מחליף…"; }
+  if(btn){ btn.disabled=true; btn.textContent="מחפש…"; }
   try{
-    const q = await requestSwap({ pool, subtopic:item.subtopic, thinkingLevel:item.thinkingLevel, difficulty:item.difficulty, excludeIds:usedIds, seed:(Date.now()&0x7fffffff) });
-    if(!q){ alert("לא נמצאה שאלה חלופית מתאימה במאגר."); return; }
-    q.points = item.points;
-    if(q.subparts) distributeSubparts(q);
-    STATE.undo = { sel:{si, ti:null, qi}, item };   // לשמירת אפשרות ביטול
-    sec.items[qi] = q;
-    renderEdit(); saveLocal();
-  }catch(e){ alert("ההחלפה נכשלה: "+e.message); }
+    const res = await requestCandidates({ pool, subtopic:item.subtopic, thinkingLevel:item.thinkingLevel,
+      difficulty:item.difficulty, excludeIds:usedIds, relax:!!relax, seed:(Date.now()&0x7fffffff) }, 3);
+    openSwapDialog({
+      title:`החלפת שאלה ${qi+1} — ${sec.name.split("—")[0].trim()}`,
+      current:item, candidates:res.questions, tier:res.tier,
+      onMore: ()=>swapItem(si,qi,relax),
+      onRelax: relax ? null : ()=>swapItem(si,qi,true),
+      onPick: q=>{
+        q.points = item.points;
+        if(q.subparts) distributeSubparts(q);
+        STATE.undo = { sel:{si, ti:null, qi}, item };   // לשמירת אפשרות ביטול
+        sec.items[qi] = q;
+        renderEdit(); renderProduce(); saveLocal();
+      }
+    });
+  }catch(e){ alert("החיפוש נכשל: "+e.message); }
   finally{ if(btn){ btn.disabled=false; btn.textContent="🔄 החלפה"; } }
 }
 async function swapExpansionItem(si,ti,qi){
@@ -1954,20 +2113,28 @@ async function swapExpansionItem(si,ti,qi){
   const usedIds = [];
   (sec.topics||[]).forEach(t=>(t.items||[]).forEach(x=>{ if(x.id) usedIds.push(x.id); }));
   const btn = document.querySelector('.qtoolbar [data-role="swap"]');
-  if(btn){ btn.disabled=true; btn.textContent="מחליף…"; }
+  if(btn){ btn.disabled=true; btn.textContent="מחפש…"; }
   try{
-    const q = await requestSwap({ pool:"expansion", topicNum:item.topicNum||topic.num, excludeIds:usedIds, seed:(Date.now()&0x7fffffff) });
-    if(!q){ alert("לא נמצאה שאלת העמקה חלופית באותו נושא."); return; }
-    STATE.undo = { sel:{si, ti, qi}, item };        // לשמירת אפשרות ביטול
-    topic.items[qi] = {
-      type:"expansion", id:q.id||"", topicNum:item.topicNum||topic.num, required:item.required,
-      subtopic:q.subtopic||"", thinkingLevel:q.thinkingLevel||"", difficulty:q.difficulty||2,
-      question:q.question||"", points:item.points,
-      subparts:(q.subparts||[]).map(s=>({label:s.label,text:s.text,points:s.points||0,criteria:s.criteria||[]}))
-    };
-    if(topic.items[qi].subparts.length) distributeSubparts(topic.items[qi]);
-    renderEdit(); saveLocal();
-  }catch(e){ alert("ההחלפה נכשלה: "+e.message); }
+    const res = await requestCandidates({ pool:"expansion", topicNum:item.topicNum||topic.num,
+      excludeIds:usedIds, seed:(Date.now()&0x7fffffff) }, 3);
+    openSwapDialog({
+      title:`החלפת שאלה ${qi+1} — נושא ${topic.num} ${topic.name||""}`,
+      current:item, candidates:res.questions, tier:res.tier,
+      onMore: ()=>swapExpansionItem(si,ti,qi),
+      onPick: q=>{
+        STATE.undo = { sel:{si, ti, qi}, item };        // לשמירת אפשרות ביטול
+        topic.items[qi] = {
+          type:"expansion", id:q.id||"", topicNum:item.topicNum||topic.num, required:item.required,
+          subtopic:q.subtopic||"", thinkingLevel:q.thinkingLevel||"", difficulty:q.difficulty||2,
+          question:q.question||"", points:item.points, source:q.source||"",
+          figures:q.figures||[],   // בלי זה איורי השאלה החדשה נעלמים
+          subparts:(q.subparts||[]).map(s=>({label:s.label,text:s.text,points:s.points||0,criteria:s.criteria||[]}))
+        };
+        if(topic.items[qi].subparts.length) distributeSubparts(topic.items[qi]);
+        renderEdit(); renderProduce(); saveLocal();
+      }
+    });
+  }catch(e){ alert("החיפוש נכשל: "+e.message); }
   finally{ if(btn){ btn.disabled=false; btn.textContent="🔄 החלפה"; } }
 }
 /* מצב מורה — מחליף את כל המסמך בין תצוגת התלמיד לתצוגה עם תשובות ומחוונים */
