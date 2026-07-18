@@ -339,15 +339,36 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .flag.ok{background:#e9f6ef; color:#1f6b47; border:1px solid #bfe6d1}
 .flag button{background:var(--deep); color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; white-space:nowrap}
 
-.qlist{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; max-height:78vh; overflow:auto}
-.qsec-title{font-weight:700; color:var(--green); font-size:13px; margin:12px 0 6px; padding-bottom:4px; border-bottom:2px solid var(--panel)}
-.qsub-title{font-weight:700; color:var(--deep); font-size:12px; margin:8px 0 3px 10px; opacity:.85}
-.qrow{display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px dashed var(--line); font-size:12px}
-.qrow .qtxt{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted)}
-.qrow input{width:52px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; text-align:center}
-.qrow .mini{padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600}
-.qrow .mini.swap{background:var(--panel); color:var(--deep)}
-.qrow .mini.del{background:#fdecec; color:#b3261e}
+/* ===== עריכה על המסמך עצמו ===== */
+/* סרגל עליון דביק — מחליף את העמודה הצדדית שנמחקה */
+.edit-top{position:sticky; top:0; z-index:20; background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 16px; margin-bottom:16px; display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap}
+.edit-top .et-meter{flex:1; min-width:260px}
+.edit-top .et-side{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.edit-hint{font-size:12px; color:var(--muted); margin-bottom:10px}
+
+/* שאלה נבחרת */
+.doc .pq[data-k]{cursor:pointer; border-radius:8px; transition:background .12s}
+.doc .pq[data-k]:hover{background:#f2f9fb}
+.doc .pq.sel{background:#eaf6f8; box-shadow:0 0 0 2px var(--teal); cursor:default}
+
+/* סרגל הפעולות של השאלה הנבחרת */
+.qtoolbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; padding-top:8px; border-top:1px dashed var(--teal)}
+.qtoolbar .tb-pts{font-size:12px; color:var(--deep); font-weight:600}
+.qtoolbar .tb-pts input{width:56px; margin-inline-start:4px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; text-align:center; font-family:inherit}
+.qtoolbar .mini{padding:5px 10px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; border:none; font-family:inherit}
+.qtoolbar .mini.swap{background:var(--panel); color:var(--deep)}
+.qtoolbar .mini.del{background:#fdecec; color:#b3261e}
+.qtoolbar .mini.undo{background:#f3f3f3; color:#555}
+.qtoolbar .mini:disabled{opacity:.4; cursor:not-allowed}
+
+/* שורת המקור — מוצגת רק במצב מורה */
+.qsrc{font-size:10.5px; color:var(--muted); margin-top:4px; padding-inline-start:10px; border-inline-start:2px solid var(--line)}
+
+@media print{
+  .edit-top{display:none !important}
+  .qtoolbar{display:none !important}
+  .doc .pq.sel{background:none !important; box-shadow:none !important}
+}
 
 /* ===== מסך הפקה ===== */
 .prod-versions{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px}
@@ -490,7 +511,6 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 @media print{ .doc .sheet-page{min-height:232mm} }
 .doc .good-luck{text-align:center; font-family:var(--doc-serif); font-weight:700; font-size:19pt; color:var(--green-700); margin:4mm 0 0}
 
-.preview-scale .doc{font-size:11pt}
 
 /* ===== הדפסה ===== */
 #printroot{display:none}
@@ -711,21 +731,24 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 
   <!-- ============ מסך 2 — עריכה ============ -->
   <section class="screen" id="screen-edit">
-    <div class="edit-cols">
-      <div class="preview-pane preview-scale">
-        <div id="editPreview"></div>
-      </div>
-      <div class="side-pane">
+    <div class="edit-top">
+      <div class="et-meter">
         <div class="meter-box">
           <div class="meter-head"><span>ניקוד כולל</span><span><b id="meterSum">0</b> / <span id="meterTarget">100</span></span></div>
           <div class="meter-track"><div class="meter-fill" id="meterFill" style="width:0%"></div></div>
           <div class="sec-scores" id="secScores"></div>
         </div>
         <div id="flags"></div>
-        <div class="mix-box" id="mixBox"></div>
-        <div class="qlist" id="qlist"></div>
+      </div>
+      <div class="mix-box" id="mixBox"></div>
+      <div class="et-side">
+        <button class="tab" id="btnTeacher" aria-pressed="false">👁 מצב מורה</button>
         <button class="bigbtn secondary" id="btnToProduce">המשך להפקה</button>
       </div>
+    </div>
+    <div class="edit-hint">לחצו על שאלה כדי לסמן אותה — ייפתח מתחתיה סרגל להחלפה, הסרה ושינוי ניקוד.</div>
+    <div class="preview-pane">
+      <div id="editPreview"></div>
     </div>
   </section>
 
@@ -872,7 +895,10 @@ const STATE = {
   request: null,
   exam: null,
   versionCount: 1,
-  currentVersion: 0
+  currentVersion: 0,
+  sel: null,          // השאלה המסומנת במסך העריכה: {si, ti, qi} — ti הוא null מחוץ לפרק ההעמקה
+  undo: null,         // ביטול החלפה אחרונה: {sel, item}
+  teacherMode: false  // מצב מורה: מציג תשובות, מחוונים ומקורות
 };
 
 /* עזרי כיווניות: עוטף טקסט לטיני ב־LTR כדי לא לשבור עברית */
@@ -1247,6 +1273,7 @@ function balanceScore(exam, target){
   });
 }
 function distributeSection(sec){
+  if(!sec.items) return;            // פרק העמקה מהשרת מחלק ניקוד בתוך topics
   // מספר השאלות שעונים עליהן בפועל
   const answered = (sec.choice && sec.choice.mode==="choose") ? sec.choice.answer : sec.items.length;
   const n = Math.max(1, answered);
@@ -1349,8 +1376,11 @@ const ABCD = ["א","ב","ג","ד"];
 function estimateMinutes(exam){
   let m = 0;
   exam.sections.forEach(sec=>{
-    const answered = (sec.choice && sec.choice.mode==="choose") ? sec.choice.answer : sec.items.length;
-    if(sec.type==="mc") m += sec.items.length*1.4;
+    // פרק העמקה מהשרת בנוי מ-topics ואין בו items — התלמיד עונה על נושא אחד בלבד
+    const count = sec.items ? sec.items.length
+                : (sec.topics && sec.topics[0] ? (sec.topics[0].items||[]).length : 0);
+    const answered = (sec.choice && sec.choice.mode==="choose") ? sec.choice.answer : count;
+    if(sec.type==="mc") m += count*1.4;
     else if(sec.type==="unseen") m += 12 + answered*6;
     else m += answered*7;
   });
@@ -1390,8 +1420,33 @@ function renderExamCover(exam, meta, br){
   <div class="subjects"><b>נושאי הבחינה:</b> ${esc(subtopics)}</div>`;
 }
 
-function renderSectionQuestions(sec, mode, br){
-  // mode: "exam" | "rubric"
+/* מפתח יציב לשאלה בתוך המבחן. ti הוא אינדקס נושא ההעמקה, או null בשאר הפרקים. */
+const qKey = (si,ti,qi) => `${si}:${ti==null?"":ti}:${qi}`;
+const isSel = (si,ti,qi) => !!STATE.sel && qKey(si,ti,qi)===qKey(STATE.sel.si,STATE.sel.ti,STATE.sel.qi);
+
+/* סרגל הפעולות שנפתח מתחת לשאלה הנבחרת */
+function toolbarHtml(it){
+  let b = "";
+  if(it.required) b += `<span class="qbadge think">חובה</span>`;
+  if(it.thinkingLevel) b += `<span class="qbadge think">${esc(it.thinkingLevel)}</span>`;
+  if(it.difficultyBand) b += `<span class="qbadge d${it.difficulty||2}">${esc(it.difficultyBand)}</span>`;
+  return `<div class="qtoolbar">
+    <span class="qbadges">${b}</span>
+    <label class="tb-pts">ניקוד<input type="number" min="1" value="${it.points}" data-role="pts"></label>
+    <button class="mini swap" data-role="swap">🔄 החלפה</button>
+    <button class="mini del" data-role="del">🗑 הסרה</button>
+    <button class="mini undo" data-role="undo"${STATE.undo ? "" : " disabled"}>↩ ביטול</button>
+  </div>`;
+}
+
+function renderSectionQuestions(sec, mode, br, opts){
+  // mode: "exam" | "rubric" ; opts: {selectable, si} — קיים רק במסך העריכה
+  const sel = !!(opts && opts.selectable);
+  // בהדפסה ובהפקה opts אינו קיים, ולכן הפלט זהה בדיוק לגרסה שלפני העריכה במסמך.
+  const pqOpen = (ti,qi) => sel
+    ? `<div class="pq${isSel(opts.si,ti,qi)?" sel":""}" data-k="${qKey(opts.si,ti,qi)}">`
+    : `<div class="pq">`;
+  const pqTools = (ti,qi,it) => (sel && isSel(opts.si,ti,qi)) ? toolbarHtml(it) : "";
   let html = "";
   const wantLines = STATE.request && STATE.request.prodOpts && STATE.request.prodOpts.includes("lines");
   const linesHtml = () => wantLines ? `<div class="ans-lines">${'<div class="ln"></div>'.repeat(4)}</div>` : "";
@@ -1404,8 +1459,11 @@ function renderSectionQuestions(sec, mode, br){
     }
     return mode==="rubric" ? critHtml(it.criteria) : linesHtml();
   };
+  // שורת מקור — מוצגת רק במצב מורה (rubric), כדי שהמורה ידע מאיפה השאלה הגיעה
+  const srcHtml = (it) => (mode!=="rubric") ? "" :
+    `<div class="qsrc">${esc(it.source||"מקור לא צוין")}${it.topic?` · ${esc(it.topic)}${it.subtopic?` › ${esc(it.subtopic)}`:""}`:""}</div>`;
   const noteChoice = sec.choice && sec.choice.mode==="choose"
-      ? `ענו על ${sec.choice.answer} מתוך ${sec.items.length} שאלות`
+      ? `ענו על ${sec.choice.answer} מתוך ${(sec.items||[]).length} שאלות`
       : (sec.type==="mc" ? `ענו על כל השאלות · מלוא הניקוד ב-${sec.scoring.fullAt} נכונות`
          : sec.type==="expansion" ? "בחרו נושא אחד וענו עליו" : "ענו על כל השאלות");
   html += `<div class="psec"><div class="psec-title"><span>${esc(sec.name)}</span><span class="psec-note">${esc(noteChoice)} · ${sec.points} נק'</span></div>`;
@@ -1418,7 +1476,10 @@ function renderSectionQuestions(sec, mode, br){
       html += `<div class="${ti===0?'topic-block':'newpage topic-block'}"><div class="block-h">נושא ${esc(t.num)} — ${esc(t.name)}</div>`;
       (t.items||[]).forEach((it,i)=>{
         const qline = `<div class="q-line"><span class="qnum">${i+1}.</span><span class="q-text">${i===0?'<b>שאלת חובה. </b>':''}${esc(it.question)}</span><span class="qpts">${it.points} נק'</span></div>`;
-        html += `<div class="pq">${qline}${bodyHtml(it)}</div>`;
+        const expFigs = (it.figures && it.figures.length)
+          ? it.figures.map(f=>`<figure class="pfig"><img src="${f.img}" alt="${esc(f.caption||"")}">${f.caption?`<figcaption>${esc(f.caption)}</figcaption>`:""}</figure>`).join("")
+          : "";
+        html += `${pqOpen(ti,i)}${qline}${expFigs}${bodyHtml(it)}${srcHtml(it)}${pqTools(ti,i,it)}</div>`;
       });
       html += `</div>`;
     });
@@ -1441,19 +1502,19 @@ function renderSectionQuestions(sec, mode, br){
       const mcFigs = (it.figures && it.figures.length)
         ? it.figures.map(f=>`<figure class="pfig"><img src="${f.img}" alt="${esc(f.caption||"")}">${f.caption?`<figcaption>${esc(f.caption)}</figcaption>`:""}</figure>`).join("")
         : "";
-      html += `<div class="pq">${qline}${mcFigs}<ul class="opts">`;
+      html += `${pqOpen(null,i)}${qline}${mcFigs}<ul class="opts">`;
       it.options.forEach((op,oi)=>{
         const isCorrect = mode==="rubric" && oi===it.correct;
         html += `<li><span class="lab">${ABCD[oi]}</span><span>${esc(op)}${isCorrect?` <span class="rubric-ans">התשובה הנכונה</span>`:""}</span></li>`;
       });
       html += `</ul>`;
       if(mode==="rubric" && it.answer){ html += `<div class="crit"><span class="lab">הסבר:</span> ${esc(it.answer)}</div>`; }
-      html += `</div>`;
+      html += `${srcHtml(it)}${pqTools(null,i,it)}</div>`;
     } else {
       const itemFigs = (it.figures && it.figures.length)
         ? it.figures.map(f=>`<figure class="pfig"><img src="${f.img}" alt="${esc(f.caption||"")}">${f.caption?`<figcaption>${esc(f.caption)}</figcaption>`:""}</figure>`).join("")
         : "";
-      html += `<div class="pq">${qline}${itemFigs}${bodyHtml(it)}</div>`;
+      html += `${pqOpen(null,i)}${qline}${itemFigs}${bodyHtml(it)}${srcHtml(it)}${pqTools(null,i,it)}</div>`;
     }
   });
   return html + `</div>`;
@@ -1753,14 +1814,15 @@ document.getElementById("btnGenerate").addEventListener("click", async ()=>{
 
 /* --- רינדור מסך עריכה --- */
 function renderEdit(){
-  const v0 = makeVersion(STATE.exam, 0);
+  // מרנדר את STATE.exam ישירות — מקור אמת אחד. אין makeVersion כאן, ולכן
+  // מה שהמורה רואה ועורך הוא בדיוק מה שיודפס בנוסח א'.
+  const mode = STATE.teacherMode ? "rubric" : "exam";
   document.getElementById("editPreview").innerHTML =
-    `<div class="doc">`+ renderExamCover(v0, STATE.examMeta, STATE.branding) +
+    `<div class="doc">`+ renderExamCover(STATE.exam, STATE.examMeta, STATE.branding) +
     `<div style="height:14px"></div>` +
-    v0.sections.map(s=>renderSectionQuestions(s,"exam",STATE.branding)).join("") + `</div>`;
+    STATE.exam.sections.map((s,si)=>renderSectionQuestions(s,mode,STATE.branding,{selectable:true,si})).join("") + `</div>`;
   renderMeter();
   renderMix();
-  renderQList();
 }
 /* הרכב פרק הרב-ברירה — פילוח לפי רמת חשיבה ורמת קושי */
 function renderMix(){
@@ -1804,56 +1866,67 @@ function renderMeter(){
   const bb = document.getElementById("btnBalance");
   if(bb) bb.addEventListener("click",()=>{ balanceScore(STATE.exam, target); renderEdit(); saveLocal(); });
 }
-function qrowHtml(si, qi, it, extra){
-  let badges = "";
-  if(it.required) badges += `<span class="qbadge think">חובה</span>`;
-  if(it.thinkingLevel) badges += `<span class="qbadge think">${esc(it.thinkingLevel)}</span>`;
-  if(it.difficultyBand) badges += `<span class="qbadge d${it.difficulty||2}">${esc(it.difficultyBand)}</span>`;
-  return `<div class="qrow" data-si="${si}" data-qi="${qi}" ${extra||""}>
-    <span class="qtxt">${qi+1}. ${esc(it.question)}</span>
-    <span class="qbadges">${badges}</span>
-    <input type="number" value="${it.points}" data-role="pts">
-    <button class="mini swap" data-role="swap">החלפה</button>
-    <button class="mini del" data-role="del">הסרה</button>
-  </div>`;
+/* מחזיר את השאלה שבמפתח הנבחר, ואת המערך שהיא יושבת בו (לצורך שינוי/הסרה) */
+function selItem(sel){
+  if(!sel) return null;
+  const sec = STATE.exam.sections[sel.si];
+  if(!sec) return null;
+  const arr = (sel.ti==null) ? sec.items : ((sec.topics||[])[sel.ti]||{}).items;
+  if(!arr || !arr[sel.qi]) return null;
+  return {sec, arr, it:arr[sel.qi]};
 }
-function renderQList(){
-  const wrap = document.getElementById("qlist");
-  let html = "";
-  STATE.exam.sections.forEach((sec,si)=>{
-    html += `<div class="qsec-title">${esc(sec.name)}</div>`;
-    if(sec.type==="expansion" && sec.topics && sec.topics.length){
-      sec.topics.forEach((t,ti)=>{
-        html += `<div class="qsub-title">נושא ${esc(t.num)} — ${esc(t.name)}</div>`;
-        (t.items||[]).forEach((it,qi)=>{ html += qrowHtml(si,qi,it,`data-ti="${ti}" data-kind="exp"`); });
-      });
-      return;
+
+/* מאזין יחיד בהאצלה — מוצמד פעם אחת בלבד, שורד כל רינדור מחדש של המסמך */
+(function wireEditPreview(){
+  const wrap = document.getElementById("editPreview");
+
+  wrap.addEventListener("click", e=>{
+    const btn = e.target.closest(".qtoolbar [data-role]");
+    if(btn){
+      const role = btn.dataset.role;
+      if(role==="swap"){ const s=STATE.sel; if(s) (s.ti==null ? swapItem(s.si,s.qi) : swapExpansionItem(s.si,s.ti,s.qi)); }
+      else if(role==="del"){ removeSelected(); }
+      else if(role==="undo"){ undoSwap(); }
+      return;                         // לחיצה על הסרגל אינה משנה את הבחירה
     }
-    sec.items.forEach((it,qi)=>{ html += qrowHtml(si,qi,it,`data-kind="std"`); });
+    const pq = e.target.closest(".pq[data-k]");
+    if(!pq) return;
+    const [si,ti,qi] = pq.dataset.k.split(":");
+    STATE.sel = {si:+si, ti: ti==="" ? null : +ti, qi:+qi};
+    renderEdit();
   });
-  wrap.innerHTML = html;
-  wrap.querySelectorAll(".qrow").forEach(row=>{
-    const si=+row.dataset.si, qi=+row.dataset.qi, kind=row.dataset.kind;
-    const ti = row.dataset.ti!==undefined ? +row.dataset.ti : null;
-    row.querySelector('[data-role="pts"]').addEventListener("change",e=>{
-      const val = Math.max(1,+e.target.value);
-      if(kind==="exp"){ STATE.exam.sections[si].topics[ti].items[qi].points = val; }
-      else {
-        STATE.exam.sections[si].items[qi].points = val;
-        STATE.exam.sections[si].points = STATE.exam.sections[si].items.reduce((s,x)=>s+(x.points||0),0);
-      }
-      renderEdit(); saveLocal();
-    });
-    row.querySelector('[data-role="swap"]').addEventListener("click",()=>{ kind==="exp" ? swapExpansionItem(si,ti,qi) : swapItem(si,qi); });
-    row.querySelector('[data-role="del"]').addEventListener("click",()=>{
-      if(kind==="exp"){ removeExpansionItem(si,ti,qi); }
-      else {
-        STATE.exam.sections[si].items.splice(qi,1);
-        balanceScore(STATE.exam, STATE.request.totalPoints);
-        renderEdit(); renderProduce(); saveLocal();
-      }
-    });
+
+  // שינוי ניקוד — change ולא click, ולכן מאזין נפרד
+  wrap.addEventListener("change", e=>{
+    if(!e.target.matches('[data-role="pts"]')) return;
+    const t = selItem(STATE.sel); if(!t) return;
+    t.it.points = Math.max(1, +e.target.value);
+    if(STATE.sel.ti==null) t.sec.points = t.sec.items.reduce((s,x)=>s+(x.points||0),0);
+    renderEdit(); saveLocal();
   });
+})();
+
+function removeSelected(){
+  const s = STATE.sel, t = selItem(s);
+  if(!t) return;
+  if(s.ti!=null){                     // פרק העמקה — כללי הבגרות
+    if(t.it.required){ alert("לא ניתן להסיר את שאלת החובה — אפשר להחליף אותה בלבד."); return; }
+    if(t.arr.length<=2){ alert("בכל נושא העמקה חייבות להישאר לפחות שתי שאלות (חובה + בחירה)."); return; }
+  }
+  t.arr.splice(s.qi,1);
+  if(s.ti==null) t.sec.points = t.sec.items.reduce((x,y)=>x+(y.points||0),0);
+  // הניקוד אינו מאוזן אוטומטית — המד יסמן את הפער והמורה יאשר איזון בעצמו.
+  STATE.sel = null; STATE.undo = null;
+  renderEdit(); renderProduce(); saveLocal();
+}
+
+function undoSwap(){
+  if(!STATE.undo) return;
+  const {sel, item} = STATE.undo;
+  const t = selItem(sel);
+  if(t){ t.arr[sel.qi] = item; if(sel.ti==null) t.sec.points = t.sec.items.reduce((x,y)=>x+(y.points||0),0); }
+  STATE.undo = null; STATE.sel = sel;
+  renderEdit(); renderProduce(); saveLocal();
 }
 async function swapItem(si,qi){
   const sec = STATE.exam.sections[si];
@@ -1861,17 +1934,18 @@ async function swapItem(si,qi){
   const pool = item.type==="mc" ? "mc" : (item.type==="open" ? "open" : null);
   if(!pool){ alert("אפשר להחליף שאלות רב-ברירה ופתוחות בלבד."); return; }
   const usedIds = sec.items.map(x=>x.id).filter(Boolean);
-  const btn = document.querySelector(`.qrow[data-si="${si}"][data-qi="${qi}"] [data-role="swap"]`);
+  const btn = document.querySelector('.qtoolbar [data-role="swap"]');
   if(btn){ btn.disabled=true; btn.textContent="מחליף…"; }
   try{
     const q = await requestSwap({ pool, subtopic:item.subtopic, thinkingLevel:item.thinkingLevel, difficulty:item.difficulty, excludeIds:usedIds, seed:(Date.now()&0x7fffffff) });
     if(!q){ alert("לא נמצאה שאלה חלופית מתאימה במאגר."); return; }
     q.points = item.points;
     if(q.subparts) distributeSubparts(q);
+    STATE.undo = { sel:{si, ti:null, qi}, item };   // לשמירת אפשרות ביטול
     sec.items[qi] = q;
     renderEdit(); saveLocal();
   }catch(e){ alert("ההחלפה נכשלה: "+e.message); }
-  finally{ if(btn){ btn.disabled=false; btn.textContent="החלפה"; } }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="🔄 החלפה"; } }
 }
 async function swapExpansionItem(si,ti,qi){
   const sec = STATE.exam.sections[si];
@@ -1879,11 +1953,12 @@ async function swapExpansionItem(si,ti,qi){
   const item = topic.items[qi];
   const usedIds = [];
   (sec.topics||[]).forEach(t=>(t.items||[]).forEach(x=>{ if(x.id) usedIds.push(x.id); }));
-  const btn = document.querySelector(`.qrow[data-si="${si}"][data-ti="${ti}"][data-qi="${qi}"] [data-role="swap"]`);
+  const btn = document.querySelector('.qtoolbar [data-role="swap"]');
   if(btn){ btn.disabled=true; btn.textContent="מחליף…"; }
   try{
     const q = await requestSwap({ pool:"expansion", topicNum:item.topicNum||topic.num, excludeIds:usedIds, seed:(Date.now()&0x7fffffff) });
     if(!q){ alert("לא נמצאה שאלת העמקה חלופית באותו נושא."); return; }
+    STATE.undo = { sel:{si, ti, qi}, item };        // לשמירת אפשרות ביטול
     topic.items[qi] = {
       type:"expansion", id:q.id||"", topicNum:item.topicNum||topic.num, required:item.required,
       subtopic:q.subtopic||"", thinkingLevel:q.thinkingLevel||"", difficulty:q.difficulty||2,
@@ -1893,15 +1968,16 @@ async function swapExpansionItem(si,ti,qi){
     if(topic.items[qi].subparts.length) distributeSubparts(topic.items[qi]);
     renderEdit(); saveLocal();
   }catch(e){ alert("ההחלפה נכשלה: "+e.message); }
-  finally{ if(btn){ btn.disabled=false; btn.textContent="החלפה"; } }
+  finally{ if(btn){ btn.disabled=false; btn.textContent="🔄 החלפה"; } }
 }
-function removeExpansionItem(si,ti,qi){
-  const topic = STATE.exam.sections[si].topics[ti];
-  if(topic.items[qi].required){ alert("לא ניתן להסיר את שאלת החובה — אפשר להחליף אותה בלבד."); return; }
-  if(topic.items.length<=2){ alert("בכל נושא העמקה חייבות להישאר לפחות שתי שאלות (חובה + בחירה)."); return; }
-  topic.items.splice(qi,1);
-  renderEdit(); renderProduce(); saveLocal();
-}
+/* מצב מורה — מחליף את כל המסמך בין תצוגת התלמיד לתצוגה עם תשובות ומחוונים */
+document.getElementById("btnTeacher").addEventListener("click", e=>{
+  STATE.teacherMode = !STATE.teacherMode;
+  e.currentTarget.setAttribute("aria-pressed", String(STATE.teacherMode));
+  e.currentTarget.classList.toggle("on", STATE.teacherMode);
+  renderEdit(); saveLocal();
+});
+
 document.getElementById("btnToProduce").addEventListener("click",()=>{ renderProduce(); go("produce"); });
 
 /* --- מסך הפקה --- */
