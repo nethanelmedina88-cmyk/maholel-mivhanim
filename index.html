@@ -692,10 +692,10 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .doc .cup-center{display:flex; justify-content:center; margin:4mm 0 0}
 /* max-width בלבד אינו מספיק ללוגו הריבועי: 300px = 79mm, וכריבוע הוא יוצא
    79mm גם לגובה — רבע עמוד, שדוחף את הלוגו לעמוד נוסף. מגבילים את הגובה. */
-.doc .cup-center svg,.doc .cup-center img{max-width:300px; max-height:34mm; width:auto; height:auto}
+.doc .cup-center svg,.doc .cup-center img{max-width:300px; max-height:48mm; width:auto; height:auto}
 /* דף התשובון: התוכן ממלא את גובה העמוד, והלוגו נדחף תמיד לתחתית */
 .doc .sheet-page{display:flex; flex-direction:column}
-.doc .sheet-page .cup-center{margin-top:auto; padding-top:6mm}
+.doc .sheet-page .cup-center{margin-top:auto; padding-top:4mm}
 /* הגובה הזמין לגוף בעמוד מודפס אינו 297mm: שוליי ההדפסה גוזלים כ-20mm,
    והכותרת והתחתית החוזרות של טבלת ה-psheet גוזלות עוד כ-50mm. min-height
    גדול מהשארית דוחף את הלוגו לעמוד נוסף ריק — לכן 210mm ולא 232mm. */
