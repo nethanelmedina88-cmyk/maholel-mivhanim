@@ -97,6 +97,71 @@ body.night .doc{ background:#fff; color:var(--doc-ink); border-radius:10px; }
 .uv-switch-input:active ~ .uv-switch::before{ transform:translateX(0); }
 
 /* 3) כפתור בועות — curly-seahorse (zjssun) */
+/* =========================================================================
+   כפתור "צור מבחן" — הפעולה הראשית של האפליקציה.
+   האנימציה מתארת את מה שקורה: נוזל שמתמלא בקנקן, ואז וי.
+   ========================================================================= */
+.bigbtn.gen-btn{
+  position:relative; overflow:hidden; isolation:isolate;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(125deg,var(--deep),var(--teal) 65%,var(--green));
+  box-shadow:0 10px 26px rgba(38,153,196,.30);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease, filter .2s ease;
+}
+.gen-face{display:inline-flex; align-items:center; gap:10px; position:relative; z-index:2}
+.gen-ico{width:23px; height:23px; flex:0 0 auto; overflow:visible}
+.gen-ico path,.gen-ico circle{fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+.gen-ico .gi-liquid{stroke-width:2.6; opacity:.9; transition:transform .3s ease}
+.gen-ico .gi-b1,.gen-ico .gi-b2{opacity:0}
+.gen-ico .gi-check{stroke-width:2.4; stroke-dasharray:22; stroke-dashoffset:22; opacity:0}
+
+/* ברק שנסחף על פני הכפתור — עדין, ורק ב-hover */
+.bigbtn.gen-btn::after{
+  content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.34) 50%,transparent 62%);
+  transform:translateX(-130%); transition:transform .8s cubic-bezier(.3,0,.2,1);
+}
+.bigbtn.gen-btn:hover:not(:disabled)::after{transform:translateX(130%)}
+.bigbtn.gen-btn:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 16px 34px rgba(38,153,196,.38)}
+.bigbtn.gen-btn:hover:not(:disabled) .gi-liquid{transform:translateY(-2.4px)}
+.bigbtn.gen-btn:hover:not(:disabled) .gi-b1{animation:genBub 1.15s ease-in-out infinite}
+.bigbtn.gen-btn:hover:not(:disabled) .gi-b2{animation:genBub 1.15s ease-in-out .35s infinite}
+.bigbtn.gen-btn:active:not(:disabled){transform:translateY(0) scale(.985); box-shadow:0 6px 16px rgba(38,153,196,.30)}
+@keyframes genBub{
+  0%{opacity:0; transform:translateY(0)}
+  35%{opacity:.95}
+  100%{opacity:0; transform:translateY(-6px)}
+}
+
+/* פס ההתקדמות בתחתית הכפתור */
+.gen-track{position:absolute; inset-inline:0; bottom:0; height:3px; background:rgba(255,255,255,.22); opacity:0; transition:opacity .2s ease; z-index:2}
+.gen-track i{display:block; height:100%; width:35%; background:#fff; transform:translateX(0)}
+
+/* --- מצב עבודה --- */
+.bigbtn.gen-btn.is-busy{cursor:progress; filter:saturate(.92)}
+.bigbtn.gen-btn.is-busy .gen-track{opacity:1}
+.bigbtn.gen-btn.is-busy .gen-track i{animation:genSlide 1.15s cubic-bezier(.6,.05,.3,.95) infinite}
+.bigbtn.gen-btn.is-busy .gi-b1{animation:genBub .95s ease-in-out infinite}
+.bigbtn.gen-btn.is-busy .gi-b2{animation:genBub .95s ease-in-out .3s infinite}
+.bigbtn.gen-btn.is-busy .gi-liquid{animation:genFill 1.6s ease-in-out infinite}
+@keyframes genSlide{0%{transform:translateX(100%)} 100%{transform:translateX(-285%)}}
+@keyframes genFill{0%,100%{transform:translateY(0)} 50%{transform:translateY(-3.4px)}}
+.gen-label{transition:opacity .18s ease}
+
+/* --- מצב הצלחה --- */
+.bigbtn.gen-btn.is-done{background:linear-gradient(125deg,var(--green-700),var(--green))}
+.bigbtn.gen-btn.is-done .gi-flask,.bigbtn.gen-btn.is-done .gi-liquid,
+.bigbtn.gen-btn.is-done .gi-b1,.bigbtn.gen-btn.is-done .gi-b2{opacity:0; transition:opacity .16s ease}
+.bigbtn.gen-btn.is-done .gi-check{opacity:1; stroke-dashoffset:0; transition:stroke-dashoffset .34s cubic-bezier(.5,.1,.3,1.1) .06s, opacity .1s ease}
+
+.bigbtn.gen-btn:disabled{opacity:.55; box-shadow:none; transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  .bigbtn.gen-btn::after{display:none}
+  .bigbtn.gen-btn *{animation:none !important}
+  .bigbtn.gen-btn.is-busy .gen-track i{width:100%; opacity:.7}
+}
+
 .bigbtn.bubble-btn{ position:relative; z-index:0; }
 .bigbtn.bubble-btn:before, .bigbtn.bubble-btn:after{ position:absolute; content:""; width:150%; left:50%; height:100%; transform:translateX(-50%); z-index:-1000; background-repeat:no-repeat; }
 .bigbtn.bubble-btn:hover:before{ top:-70%;
@@ -827,7 +892,19 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
       </div>
     </div>
 
-    <button class="bigbtn bubble-btn" id="btnGenerate">צור מבחן</button>
+    <button class="bigbtn gen-btn" id="btnGenerate">
+      <span class="gen-face">
+        <svg class="gen-ico" viewBox="0 0 24 24" aria-hidden="true">
+          <path class="gi-flask" d="M9.4 3h5.2M10.3 3v5.6L6.1 16.4A2 2 0 0 0 7.9 19.4h8.2a2 2 0 0 0 1.8-3L13.7 8.6V3"/>
+          <path class="gi-liquid" d="M7.9 14.1h8.2"/>
+          <circle class="gi-b1" cx="10.6" cy="16.6" r=".85"/>
+          <circle class="gi-b2" cx="13.6" cy="17.4" r=".65"/>
+          <path class="gi-check" d="M7.4 12.4l3.1 3.1 6.2-6.6"/>
+        </svg>
+        <span class="gen-label">צור מבחן</span>
+      </span>
+      <span class="gen-track" aria-hidden="true"><i></i></span>
+    </button>
 
     <!-- פרסום שיווקי -->
     <div class="promo">
@@ -1981,14 +2058,29 @@ document.getElementById("btnGenerate").addEventListener("click", async ()=>{
     prodOpts
   };
   const genBtn = document.getElementById("btnGenerate");
-  const prevLabel = genBtn.textContent; genBtn.disabled = true; genBtn.textContent = "בונה מבחן…";
+  const lbl = genBtn.querySelector(".gen-label");
+  const prevLabel = lbl ? lbl.textContent : "צור מבחן";
+  const setLabel = t => { if(lbl){ lbl.style.opacity = "0";
+    setTimeout(()=>{ lbl.textContent = t; lbl.style.opacity = "1"; }, 130); } };
+  // מדווח על השלב שבו הבנייה נמצאת, ולא רק שהיא רצה. השלבים מתקדמים
+  // לפי זמן ולא לפי אירועי שרת אמיתיים — ולכן האחרון נשאר עד שהתשובה חוזרת.
+  const steps = ["בוחר שאלות…", "מאזן רמות קושי…", "מחלק ניקוד…", "מסדר פרקים…"];
+  let si = 0;
+  setLabel(steps[0]);
+  genBtn.disabled = true; genBtn.classList.add("is-busy");
+  const ticker = setInterval(()=>{ si = Math.min(si+1, steps.length-1); setLabel(steps[si]); }, 850);
+  const stop = ()=>{ clearInterval(ticker); genBtn.classList.remove("is-busy"); };
   try{
     STATE.exam = await requestExam(STATE.request);
   }catch(err){
+    stop();
     alert("שגיאה בבניית המבחן: "+(err&&err.message||err)+"\nבדקו את חיבור השרת ונסו שוב.");
-    genBtn.disabled=false; genBtn.textContent=prevLabel; return;
+    genBtn.disabled=false; setLabel(prevLabel); return;
   }
-  genBtn.disabled=false; genBtn.textContent=prevLabel;
+  stop();
+  genBtn.classList.add("is-done"); setLabel("המבחן מוכן");
+  await new Promise(r=>setTimeout(r, 620));
+  genBtn.classList.remove("is-done"); genBtn.disabled=false; setLabel(prevLabel);
   STATE.versionCount = STATE.request.versions;
   STATE.currentVersion = 0;
   document.getElementById("stepEdit").disabled=false;
@@ -2608,9 +2700,12 @@ async function init(){
   const had = loadLocal();
   // מיתוג נעול — כל בחינה נדפסת עם השם והמותג של נתנאל מדינה (חלק פרסומי)
   STATE.branding = { name:"נתנאל מדינה", phone:"", insta:"@bio_bagrut", email:"biomedilab88@gmail.com", brand:"MediLab" };
-  const gb=document.getElementById("btnGenerate"); if(gb) gb.disabled=true;   // נעול עד שהמאגר נטען
+  // נעול עד שהמאגר נטען — ואומר למה, במקום להיראות שבור
+  const gb=document.getElementById("btnGenerate");
+  const gl=gb && gb.querySelector(".gen-label");
+  if(gb){ gb.disabled=true; if(gl) gl.textContent="טוען מאגר…"; }
   await bootstrapBank();
-  if(gb) gb.disabled=false;
+  if(gb){ gb.disabled=false; if(gl) gl.textContent="צור מבחן"; }
   // מאגר הדגמה מובנה רק אם אין שרת ואין מאגר מקומי (כדי שהאתר לא יישאר ריק)
   const haveExternal = SERVER_URL || (window.MediLabBuilder && MediLabBuilder.hasBank());
   if(!STATE.bank.length && !haveExternal) STATE.bank = SEED_BANK.slice();
