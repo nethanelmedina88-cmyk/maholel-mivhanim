@@ -255,9 +255,9 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 }
 /* בועות עולות — הבאנר כמו נוזל רותח בפלסקה */
 .banner .bubbles{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0}
+/* הבועות רומזות על פלסקה — ולכן צריכות להיות ברקע ולא בחזית */
 .banner .bubbles i{position:absolute; bottom:-24px; border-radius:50%; opacity:0;
-  background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.72), rgba(180,240,240,.14) 70%);
-  box-shadow:0 0 6px rgba(150,235,235,.35);
+  background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.34), rgba(190,240,245,.07) 70%);
   animation:bubble-rise linear infinite;}
 .banner .bubbles i:nth-child(1){left:25%; width:10px; height:10px; animation-duration:9s;  animation-delay:0s}
 .banner .bubbles i:nth-child(2){left:31%; width:6px;  height:6px;  animation-duration:7s;  animation-delay:1.4s}
@@ -280,18 +280,17 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .banner h2{color:#fff; font-size:34px; margin-bottom:8px; letter-spacing:.3px; line-height:1.12}
 .banner p{margin:0; opacity:.93; font-size:15px; max-width:50ch; line-height:1.55}
 /* אריח לוגו חי — ריחוף עדין, הילה זוהרת, וברק-זכוכית חולף */
-.banner .banner-logo{position:relative; z-index:1; flex-shrink:0; background:#fff; border-radius:22px; padding:12px; box-shadow:0 14px 34px rgba(0,0,0,.24); animation:logo-float 5.5s ease-in-out infinite}
-.banner .banner-logo::before{content:""; position:absolute; inset:-22px; border-radius:36px; z-index:-1;
-  background:radial-gradient(circle, rgba(72,232,216,.75), rgba(72,232,216,.15) 55%, transparent 72%); filter:blur(13px); animation:logo-glow 3.6s ease-in-out infinite}
-.banner .banner-logo span{display:block; width:212px; height:84px; background-size:contain; background-repeat:no-repeat; background-position:center; border-radius:10px; position:relative; overflow:hidden}
-.banner .banner-logo span::after{content:""; position:absolute; top:0; left:-75%; width:55%; height:100%; pointer-events:none;
-  background:linear-gradient(105deg, transparent, rgba(255,255,255,.6), transparent); transform:skewX(-18deg); animation:logo-shine 6.5s ease-in-out infinite}
-@keyframes logo-float{0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)}}
-@keyframes logo-glow{0%,100%{opacity:.5; transform:scale(1)} 50%{opacity:1; transform:scale(1.1)}}
-@keyframes logo-shine{0%,16%{left:-75%} 42%,100%{left:150%}}
+/* הלוגו הוא חלק מהבאנר ולא מדבקה עליו: לוח לבן נקי, בלי הילה זוהרת,
+   בלי ריחוף ובלי ברק חולף — שלוש אנימציות שרצו עליו בו-זמנית. */
+.banner .banner-logo{position:relative; z-index:1; flex-shrink:0; background:#fff;
+  border-radius:14px; padding:13px 20px; box-shadow:0 6px 20px rgba(6,40,52,.20);
+  border:1px solid rgba(255,255,255,.55); transition:transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease}
+.banner:hover .banner-logo{transform:translateY(-3px); box-shadow:0 12px 28px rgba(6,40,52,.26)}
+.banner .banner-logo span{display:block; width:190px; height:70px; background-size:contain;
+  background-repeat:no-repeat; background-position:center}
 @media (prefers-reduced-motion:reduce){
-  .banner .banner-logo,.banner .banner-logo::before,.banner .banner-logo span::after,.banner .bubbles i{animation:none}
-  .banner .banner-logo span::after,.banner .bubbles{display:none}
+  .banner .banner-logo{transition:none}
+  .banner .bubbles{display:none}
 }
 
 /* ===== צ'יפים ===== */
