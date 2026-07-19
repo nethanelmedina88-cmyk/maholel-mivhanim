@@ -1604,6 +1604,7 @@ function renderSectionQuestions(sec, mode, br, opts){
   // שורת מקור — מוצגת רק במצב מורה (rubric), כדי שהמורה ידע מאיפה השאלה הגיעה
   const srcHtml = (it) => (mode!=="rubric") ? "" :
     `<div class="qsrc">${esc(it.source||"מקור לא צוין")}${it.topic?` · ${esc(it.topic)}${it.subtopic?` › ${esc(it.subtopic)}`:""}`:""}</div>`;
+  const realNote = mcRealNote;
   const noteChoice = sec.choice && sec.choice.mode==="choose"
       ? `ענו על ${sec.choice.answer} מתוך ${(sec.items||[]).length} שאלות`
       : (sec.type==="mc" ? `ענו על כל השאלות · מלוא הניקוד ב-${sec.scoring.fullAt} נכונות`
@@ -1650,7 +1651,7 @@ function renderSectionQuestions(sec, mode, br, opts){
         html += `<li><span class="lab">${ABCD[oi]}</span><span>${esc(op)}${isCorrect?` <span class="rubric-ans">התשובה הנכונה</span>`:""}</span></li>`;
       });
       html += `</ul>`;
-      if(mode==="rubric" && it.answer){ html += `<div class="crit"><span class="lab">הסבר:</span> ${esc(it.answer)}</div>`; }
+      if(mode==="rubric"){ const nt = realNote(it); if(nt) html += `<div class="crit"><span class="lab">הסבר:</span> ${esc(nt)}</div>`; }
       html += `${srcHtml(it)}${pqTools(null,i,it)}</div>`;
     } else {
       const itemFigs = (it.figures && it.figures.length)
@@ -1700,11 +1701,24 @@ function buildRubricDoc(version, vIndex){
   html += `</div>`;
   return html;
 }
+/* שדה answer ברוב השאלות רק חוזר על המסיח שכבר מסומן כנכון. מחזיר טקסט
+   רק כשיש בו מידע אמיתי מעבר לניסוח מחדש של אותו מסיח. */
+function mcRealNote(it){
+  if(!it || !it.answer || it.correct==null || !it.options) return "";
+  const strip = s => String(s).replace(/[^א-תa-zA-Z0-9]/g,"");
+  const body = String(it.answer).replace(/^\s*התשובה הנכונה\s*:\s*/,"").trim();
+  return strip(body)===strip(it.options[it.correct]) ? "" : body;
+}
 function renderMcAnswers(sec){
   let html = `<div style="margin-top:6px">`;
   sec.items.forEach((it,i)=>{
+    // ברשימה המרוכזת מוצגת רק האות, ולכן טקסט המסיח כאן מסייע לבדיקה —
+    // אבל בלי הקידומת "התשובה הנכונה:" שכבר נאמרה בשורה עצמה.
+    const opt = (it.options||[])[it.correct];
     html += `<div class="pq"><span class="qnum">${i+1}.</span> תשובה נכונה: <span class="rubric-ans">${ABCD[it.correct]}</span>`;
-    if(it.answer) html += ` <span class="crit"> — ${esc(it.answer)}</span>`;
+    if(opt) html += ` <span class="crit">${esc(opt)}</span>`;
+    const nt = mcRealNote(it);
+    if(nt) html += `<div class="crit"><span class="lab">הסבר:</span> ${esc(nt)}</div>`;
     html += `</div>`;
   });
   return html+`</div>`;
