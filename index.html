@@ -325,7 +325,6 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .preview-pane{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px; max-height:78vh; overflow:auto}
 .side-pane{position:sticky; top:78px; display:flex; flex-direction:column; gap:16px}
 
-.meter-box{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px}
 .meter-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px}
 .meter-head b{font-size:22px}
 .meter-track{height:12px; background:var(--panel); border-radius:8px; overflow:hidden}
@@ -339,27 +338,92 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .flag.ok{background:#e9f6ef; color:#1f6b47; border:1px solid #bfe6d1}
 .flag button{background:var(--deep); color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; white-space:nowrap}
 
-/* ===== עריכה על המסמך עצמו ===== */
-/* סרגל עליון דביק — מחליף את העמודה הצדדית שנמחקה */
-.edit-top{position:sticky; top:0; z-index:20; background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 16px; margin-bottom:16px; display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap}
-.edit-top .et-meter{flex:1; min-width:260px}
-.edit-top .et-side{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-.edit-hint{font-size:12px; color:var(--muted); margin-bottom:10px}
+/* =========================================================================
+   מסך העריכה — "שולחן השרטוט"
+   שפה ויזואלית: נייר משבצות, לוחות בקו-שיער, פינות חדות ומספרים טבלאיים.
+   משתמשת בטוקנים הקיימים בלבד, כדי שמצב כהה ימשיך לעבוד.
+   ========================================================================= */
+#screen-edit{
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:26px 26px; background-position:center top;
+  margin:-8px -10px 0; padding:8px 10px 0;
+}
+@media (prefers-color-scheme:dark){ #screen-edit{opacity:1} }
 
-/* שאלה נבחרת */
-.doc .pq[data-k]{cursor:pointer; border-radius:8px; transition:background .12s}
-.doc .pq[data-k]:hover{background:#f2f9fb}
-.doc .pq.sel{background:#eaf6f8; box-shadow:0 0 0 2px var(--teal); cursor:default}
+/* --- שולחן הבקרה הדביק --- */
+.desk{position:sticky; top:0; z-index:20; background:var(--white); border:1px solid var(--line);
+  border-radius:var(--radius-sm); box-shadow:var(--sh-sm); margin-bottom:14px; overflow:hidden}
+.desk-row{display:flex; gap:14px; align-items:center; flex-wrap:wrap; padding:11px 15px}
+.desk-row + .desk-row{border-top:1px solid var(--line); background:var(--panel); padding:9px 15px}
+.desk-eyebrow{font-size:10px; font-weight:800; letter-spacing:.16em; color:var(--teal)}
+
+/* מד הניקוד — המספר הוא הגיבור */
+.desk-score{display:flex; align-items:baseline; gap:7px; line-height:1}
+.desk-score b{font-size:31px; font-weight:800; color:var(--deep); font-variant-numeric:tabular-nums}
+.desk-score .of{font-size:14px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums}
+.desk-score.off b{color:#c1553f}
+.desk-track{flex:1; min-width:130px; height:7px; background:var(--panel-2); border:1px solid var(--line); overflow:hidden}
+.desk-track i{display:block; height:100%; background:var(--teal); transition:width .45s ease}
+.desk-track.off i{background:#c1553f}
+.desk-time{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap}
+.desk-time b{font-size:15px; color:var(--green-700); font-weight:800}
+.desk-time.over b{color:var(--amber-700)}
+.desk-sp{flex:1}
+
+/* צ'יפים של הרכב המבחן */
+.dchip{display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); background:var(--white);
+  padding:2px 9px; font-size:11.5px; font-weight:700; color:var(--muted); white-space:nowrap}
+.dchip b{font-variant-numeric:tabular-nums; color:var(--deep); font-size:12.5px}
+.dchip.on{border-color:var(--teal); background:var(--panel-2); color:var(--deep)}
+.dchip.warn{border-color:var(--amber); background:var(--amber-soft); color:var(--amber-700)}
+.dchip.warn b{color:var(--amber-700)}
+.dgroup{display:flex; gap:5px; align-items:center; flex-wrap:wrap}
+.dgroup > span.lbl{font-size:10px; font-weight:800; letter-spacing:.1em; color:var(--muted); margin-inline-end:2px}
+
+/* דגלים */
+.desk-flags{display:flex; flex-direction:column; gap:5px; width:100%}
+.dflag{display:flex; align-items:center; gap:8px; font-size:12px; padding:6px 10px; border-inline-start:3px solid}
+.dflag.ok{border-color:var(--green); background:rgba(79,169,128,.08); color:var(--green-700)}
+.dflag.warn{border-color:var(--amber); background:var(--amber-soft); color:var(--amber-700)}
+.dflag button{margin-inline-start:auto; background:var(--deep); color:#fff; padding:4px 11px; font-size:11.5px;
+  font-weight:700; border:none; border-radius:4px; cursor:pointer; white-space:nowrap}
+
+/* ניווט מהיר לפרקים */
+.desk-jump{display:flex; gap:4px; flex-wrap:wrap}
+.desk-jump button{border:1px solid var(--line); background:var(--white); color:var(--muted);
+  font-size:11.5px; font-weight:700; padding:3px 10px; cursor:pointer; font-family:inherit; border-radius:3px}
+.desk-jump button:hover{border-color:var(--teal); color:var(--deep)}
+
+/* .bigbtn מוגדר ברוחב מלא לטפסים — בשולחן הוא כפתור בשורה */
+.desk .bigbtn{width:auto; margin:0; padding:9px 20px; font-size:14px; border-radius:4px; flex:0 0 auto}
+.desk .tab{padding:8px 14px; font-size:12.5px; border-radius:4px; flex:0 0 auto}
+
+.edit-hint{font-size:11.5px; color:var(--muted); margin:0 0 10px; display:flex; align-items:center; gap:7px}
+.edit-hint::before{content:""; width:14px; height:1px; background:var(--teal)}
+
+/* שאלה נבחרת — סימון בקו מדידה בשוליים, לא בהדגשה רועשת */
+.doc .pq[data-k]{cursor:pointer; transition:background .12s; position:relative}
+.doc .pq[data-k]:hover{background:var(--panel)}
+.doc .pq[data-k]:hover::before{content:""; position:absolute; inset-block:0; inset-inline-start:-9px; width:2px; background:var(--line)}
+.doc .pq.sel{background:var(--panel-2); cursor:default}
+.doc .pq.sel::before{content:""; position:absolute; inset-block:0; inset-inline-start:-9px; width:3px; background:var(--teal)}
 
 /* סרגל הפעולות של השאלה הנבחרת */
-.qtoolbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; padding-top:8px; border-top:1px dashed var(--teal)}
-.qtoolbar .tb-pts{font-size:12px; color:var(--deep); font-weight:600}
-.qtoolbar .tb-pts input{width:56px; margin-inline-start:4px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; text-align:center; font-family:inherit}
-.qtoolbar .mini{padding:5px 10px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; border:none; font-family:inherit}
-.qtoolbar .mini.swap{background:var(--panel); color:var(--deep)}
-.qtoolbar .mini.del{background:#fdecec; color:#b3261e}
-.qtoolbar .mini.undo{background:#f3f3f3; color:#555}
-.qtoolbar .mini:disabled{opacity:.4; cursor:not-allowed}
+.qtoolbar{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:9px; padding-top:9px;
+  border-top:1px dashed var(--teal)}
+.qtoolbar .tb-pts{font-size:11.5px; color:var(--muted); font-weight:700; letter-spacing:.04em}
+.qtoolbar .tb-pts input{width:52px; margin-inline-start:5px; padding:4px 6px; border:1px solid var(--line);
+  border-radius:3px; text-align:center; font-family:inherit; font-weight:700; color:var(--deep);
+  font-variant-numeric:tabular-nums; background:var(--white)}
+.qtoolbar .mini{padding:5px 11px; border-radius:3px; font-size:12px; font-weight:700; cursor:pointer;
+  border:1px solid var(--line); font-family:inherit; background:var(--white); color:var(--muted); transition:.14s}
+.qtoolbar .mini.swap{background:var(--panel-2); color:var(--deep); border-color:var(--teal)}
+.qtoolbar .mini.swap:hover{background:var(--teal); color:#fff}
+.qtoolbar .mini.del:hover{border-color:#c1553f; color:#c1553f}
+.qtoolbar .mini.undo:hover{border-color:var(--deep); color:var(--deep)}
+.qtoolbar .mini:disabled{opacity:.35; cursor:not-allowed}
+.qtoolbar .qbadges{display:flex; gap:4px; margin-inline-end:auto}
 
 /* שורת המקור — מוצגת רק במצב מורה */
 .qsrc{font-size:10.5px; color:var(--muted); margin-top:4px; padding-inline-start:10px; border-inline-start:2px solid var(--line)}
@@ -391,7 +455,7 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .cand-tier{background:#fdf3e6; color:#8a5416; border:1px solid #f0d3a6; border-radius:20px; padding:1px 8px; font-size:10.5px; font-weight:700}
 
 @media print{
-  .edit-top{display:none !important}
+  .desk,.edit-hint{display:none !important}
   .qtoolbar{display:none !important}
   .doc .pq.sel{background:none !important; box-shadow:none !important}
 }
@@ -762,22 +826,29 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 
   <!-- ============ מסך 2 — עריכה ============ -->
   <section class="screen" id="screen-edit">
-    <div class="edit-top">
-      <div class="et-meter">
-        <div class="meter-box">
-          <div class="meter-head"><span>ניקוד כולל</span><span><b id="meterSum">0</b> / <span id="meterTarget">100</span></span></div>
-          <div class="meter-track"><div class="meter-fill" id="meterFill" style="width:0%"></div></div>
-          <div class="sec-scores" id="secScores"></div>
+    <div class="desk">
+      <!-- שורה 1: הניקוד, הזמן והפעולות -->
+      <div class="desk-row">
+        <div>
+          <div class="desk-eyebrow">ניקוד</div>
+          <div class="desk-score" id="deskScore"><b id="meterSum">0</b><span class="of">/ <span id="meterTarget">100</span></span></div>
         </div>
-        <div id="flags"></div>
-      </div>
-      <div class="mix-box" id="mixBox"></div>
-      <div class="et-side">
+        <div class="desk-track" id="deskTrack"><i id="meterFill" style="width:0%"></i></div>
+        <div class="desk-time" id="deskTime">אומדן <b>—</b> דק'</div>
+        <div class="desk-sp"></div>
         <button class="tab" id="btnTeacher" aria-pressed="false">👁 מצב מורה</button>
         <button class="bigbtn secondary" id="btnToProduce">המשך להפקה</button>
       </div>
+      <!-- שורה 2: הרכב המבחן בפועל -->
+      <div class="desk-row" id="deskMix"></div>
+      <!-- שורה 3: דגלים וניווט -->
+      <div class="desk-row" id="deskBottom">
+        <div class="desk-flags" id="flags"></div>
+        <div class="desk-jump" id="deskJump"></div>
+      </div>
+      <div id="secScores" hidden></div>
     </div>
-    <div class="edit-hint">לחצו על שאלה כדי לסמן אותה — ייפתח מתחתיה סרגל להחלפה, הסרה ושינוי ניקוד.</div>
+    <div class="edit-hint">לחצו על שאלה במסמך כדי לסמן אותה — ייפתח מתחתיה סרגל להחלפה, הסרה ושינוי ניקוד</div>
     <div class="preview-pane">
       <div id="editPreview"></div>
     </div>
@@ -1896,46 +1967,86 @@ function renderEdit(){
   renderMix();
 }
 /* הרכב פרק הרב-ברירה — פילוח לפי רמת חשיבה ורמת קושי */
+/* הרכב המבחן בפועל — לא מה שביקשו, אלא מה שיצא. סופר על פני כל הפרקים
+   כדי שהמורה יראה בשורה אחת אם המבחן מוטה לרמת חשיבה או קושי אחת. */
 function renderMix(){
-  const box = document.getElementById("mixBox");
-  const mc = STATE.exam.sections.find(s=>s.type==="mc");
-  if(!mc || !mc.items.length){ box.style.display="none"; return; }
-  box.style.display="block";
-  const count = (key,val) => mc.items.filter(q=>q[key]===val).length;
-  const think = [["ידע","ידע"],["הבנה","הבנה"],["תש\"ג","תש\"ג"]]
-    .map(([lbl,v])=>count("thinkingLevel",v)?`<span class="mix-chip">${lbl}: ${count("thinkingLevel",v)}</span>`:"").join("");
-  const diff = [["קל","קל"],["בינוני","בינוני"],["קשה","קשה"],["קשה מאוד","קשה מאוד"]]
-    .map(([lbl,v])=>count("difficultyBand",v)?`<span class="mix-chip">${lbl}: ${count("difficultyBand",v)}</span>`:"").join("");
-  box.innerHTML = `<h4>הרכב הרב-ברירה (${mc.items.length} שאלות)</h4>`+
-    (think?`<div class="mix-row">${think}</div>`:"")+
-    (diff?`<div class="mix-row">${diff}</div>`:"");
+  const box = document.getElementById("deskMix");
+  const all = [];
+  STATE.exam.sections.forEach(s=>{
+    (s.items||[]).forEach(q=>all.push(q));
+    (s.topics||[]).forEach(t=>(t.items||[]).forEach(q=>all.push(q)));
+  });
+  if(!all.length){ box.style.display="none"; return; }
+  box.style.display="flex";
+  const n = (k,v) => all.filter(q=>q[k]===v).length;
+  const total = all.length;
+
+  const chip = (lbl,c,cls="") => c ? `<span class="dchip ${cls}"><b>${c}</b>${lbl}</span>` : "";
+  // רמת חשיבה — מסמן באדום-ענבר אם רמה אחת בולעת יותר מ-70%
+  const th = [["ידע","ידע"],["הבנה","הבנה"],['תש"ג','תש"ג']];
+  const thCounts = th.map(([l,v])=>[l,n("thinkingLevel",v)]);
+  const thMax = Math.max(...thCounts.map(x=>x[1]));
+  const thSkew = total>=6 && thMax/total > .7;
+  const thHtml = thCounts.map(([l,c])=>chip(l,c, thSkew && c===thMax ? "warn":"")).join("");
+
+  const df = [["קל","קל"],["בינוני","בינוני"],["קשה","קשה"],["קשה מאוד","קשה מאוד"]];
+  const dfHtml = df.map(([l,v])=>chip(l,n("difficultyBand",v))).join("");
+
+  const topics = [...new Set(all.map(q=>q.topic).filter(Boolean))];
+  const figs = all.filter(q=>(q.figures||[]).length).length;
+
+  box.innerHTML =
+    `<div class="dgroup"><span class="lbl">חשיבה</span>${thHtml||'<span class="dchip">—</span>'}</div>`+
+    `<div class="dgroup"><span class="lbl">קושי</span>${dfHtml||'<span class="dchip">—</span>'}</div>`+
+    `<div class="dgroup"><span class="lbl">נושאים</span>${topics.map(t=>`<span class="dchip on">${esc(t)}</span>`).join("")||'<span class="dchip">—</span>'}</div>`+
+    (figs?`<div class="dgroup"><span class="dchip">🖼 <b>${figs}</b> עם איור</span></div>`:"")+
+    (thSkew?`<div class="dgroup"><span class="dchip warn">⚠ המבחן מוטה לרמת חשיבה אחת</span></div>`:"");
 }
+
 function renderMeter(){
   const target = STATE.request.totalPoints;
   const sum = sumPoints(STATE.exam);
+  const off = sum !== target;
   document.getElementById("meterSum").textContent = sum;
   document.getElementById("meterTarget").textContent = target;
-  const pct = Math.min(100, Math.round(sum/target*100));
-  const fill = document.getElementById("meterFill");
-  fill.style.width = pct+"%";
-  fill.classList.toggle("over", sum>target);
-  document.getElementById("secScores").innerHTML =
-    STATE.exam.sections.map(s=>`<div><span>${esc(s.name.split("—")[0])}</span><span>${s.points} נק'</span></div>`).join("");
-  // דגלים
+  document.getElementById("deskScore").classList.toggle("off", off);
+  document.getElementById("deskTrack").classList.toggle("off", off);
+  document.getElementById("meterFill").style.width = Math.min(100, Math.round(sum/target*100))+"%";
+
+  // אומדן זמן
+  const est = estimateMinutes(STATE.exam), dur = STATE.examMeta.duration;
+  const timeEl = document.getElementById("deskTime");
+  timeEl.innerHTML = `אומדן <b>${est}</b> דק' מתוך ${dur}`;
+  timeEl.classList.toggle("over", est > dur);
+
+  // דגלים — רק מה שדורש פעולה
   const flags = document.getElementById("flags");
   let html = "";
-  if(sum!==target){
-    html += `<div class="flag warn"><span>סכום הניקוד (${sum}) אינו שווה ליעד (${target}).</span><button id="btnBalance">איזון ניקוד</button></div>`;
+  if(off){
+    html += `<div class="dflag warn"><span>סכום הניקוד ${sum} אינו שווה ליעד ${target}.</span><button id="btnBalance">⚖ אזן עבורי</button></div>`;
   } else {
-    html += `<div class="flag ok"><span>סכום הניקוד תואם ליעד בדיוק.</span></div>`;
+    html += `<div class="dflag ok"><span>סכום הניקוד תואם ליעד בדיוק.</span></div>`;
   }
-  const est = estimateMinutes(STATE.exam);
-  if(est > STATE.examMeta.duration){
-    html += `<div class="flag warn"><span>אומדן הזמן (${est} דק') חורג מהמשך שנקבע (${STATE.examMeta.duration} דק').</span></div>`;
+  if(est > dur){
+    html += `<div class="dflag warn"><span>אומדן הזמן חורג מהמשך שנקבע ב-${est-dur} דק'.</span></div>`;
   }
   flags.innerHTML = html;
   const bb = document.getElementById("btnBalance");
   if(bb) bb.addEventListener("click", ()=>confirmBalance(target));
+
+  // ניווט מהיר לפרקים — במסמך ארוך זה חוסך גלילה
+  const jump = document.getElementById("deskJump");
+  jump.innerHTML = STATE.exam.sections.map((s,i)=>{
+    const short = esc(s.name.split("—").pop().trim()) || esc(s.name);
+    return `<button data-jump="${i}">${short} · ${s.points}</button>`;
+  }).join("");
+  jump.querySelectorAll("[data-jump]").forEach(b=>{
+    b.addEventListener("click",()=>{
+      const secs = document.querySelectorAll("#editPreview .psec");
+      const el = secs[+b.dataset.jump];
+      if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+  });
 }
 /* מחזיר את השאלה שבמפתח הנבחר, ואת המערך שהיא יושבת בו (לצורך שינוי/הסרה) */
 function selItem(sel){
