@@ -6,7 +6,7 @@
 <title>מחולל מבחנים · MediLab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Assistant:wght@400;500;600;700;800&family=Rubik:wght@400;500;600;700&family=Varela+Round&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=Heebo:wght@500;700;800;900&family=Rubik:wght@400;500;600&family=Varela+Round&display=swap" rel="stylesheet">
 <style>
 /* ===== משתני מותג ===== */
 :root{
@@ -20,8 +20,8 @@
   --sh-lg:0 16px 50px rgba(20,74,94,.16);
   --shadow:var(--sh-md);
   --radius:18px; --radius-sm:12px; --radius-lg:26px;
-  --head-font:'Varela Round',system-ui,sans-serif;
-  --body-font:'Rubik',system-ui,'Segoe UI',sans-serif;
+  --head-font:'Heebo','Varela Round',system-ui,sans-serif;
+  --body-font:'Assistant','Rubik',system-ui,'Segoe UI',sans-serif;
 }
 *{box-sizing:border-box}
 html,body{overflow-x:hidden}
@@ -33,7 +33,7 @@ body{
     radial-gradient(55rem 40rem at -12% 2%, rgba(79,169,128,.12), transparent 55%);
   background-attachment:fixed;
 }
-h1,h2,h3,h4{font-family:var(--head-font); font-weight:400; color:var(--deep); margin:0; letter-spacing:.2px}
+h1,h2,h3,h4{font-family:var(--head-font); font-weight:800; color:var(--deep); margin:0; letter-spacing:-.015em; text-wrap:balance}
 ::selection{background:var(--teal); color:#fff}
 
 /* ===== מצב לילה (Night mode) ===== */
@@ -151,11 +151,11 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 .brand-lockup{display:flex; align-items:center; gap:8px; direction:ltr}
 .brand .flask{width:34px; height:44px; background-size:contain; background-repeat:no-repeat; background-position:center; flex-shrink:0}
 .wm-col{display:flex; flex-direction:column; align-items:flex-start; line-height:1.03}
-.wordmark{font-family:var(--head-font); font-size:22px; font-weight:700; letter-spacing:.3px}
+.wordmark{font-family:var(--head-font); font-size:22px; font-weight:800; letter-spacing:-.01em}
 .wordmark .medi{color:var(--deep)} .wordmark .lab{color:var(--green)}
 .brand .powered{font-size:8.5px; letter-spacing:.35px; direction:ltr; color:var(--muted); font-weight:600; margin-top:2px}
 .brand .powered b{color:var(--deep); font-weight:800}
-.brand .app-name{font-family:var(--head-font); font-size:19px; color:var(--deep); padding-inline-start:12px; border-inline-start:2px solid var(--line); letter-spacing:.2px}
+.brand .app-name{font-family:var(--head-font); font-weight:700; font-size:19px; color:var(--deep); padding-inline-start:12px; border-inline-start:2px solid var(--line); letter-spacing:.2px}
 .steps{display:flex; gap:3px; background:var(--panel); padding:4px; border-radius:13px; margin-inline-start:auto; border:1px solid var(--line)}
 .steps button{
   padding:8px 18px; border-radius:10px; font-weight:600; font-size:14px;
@@ -398,6 +398,37 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
 /* .bigbtn מוגדר ברוחב מלא לטפסים — בשולחן הוא כפתור בשורה */
 .desk .bigbtn{width:auto; margin:0; padding:9px 20px; font-size:14px; border-radius:4px; flex:0 0 auto}
 .desk .tab{padding:8px 14px; font-size:12.5px; border-radius:4px; flex:0 0 auto}
+
+/* --- אייקוני קו: רשת 24, עובי 1.7, קצוות מעוגלים --- */
+.ico{width:15px; height:15px; flex:0 0 auto; vertical-align:-2px}
+.ico path,.ico circle,.ico rect{fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+.qtoolbar .mini,.desk .tab,.mdl-f button{display:inline-flex; align-items:center; gap:6px}
+
+/* --- כפתור: מילוי שנסחף מהקצה (ברוח uiverse) --- */
+.qtoolbar .mini,.desk-jump button{position:relative; overflow:hidden; isolation:isolate}
+.qtoolbar .mini::before,.desk-jump button::before{
+  content:""; position:absolute; inset:0; z-index:-1; background:var(--deep);
+  transform:scaleX(0); transform-origin:right; transition:transform .32s cubic-bezier(.65,0,.35,1)}
+.qtoolbar .mini:not(:disabled):hover::before,.desk-jump button:hover::before{transform:scaleX(1)}
+.qtoolbar .mini:not(:disabled):hover,.desk-jump button:hover{color:#fff; border-color:var(--deep)}
+.qtoolbar .mini.swap:not(:disabled):hover::before{background:var(--teal)}
+.qtoolbar .mini.del:not(:disabled):hover::before{background:#c1553f}
+
+/* --- שדה הניקוד: קו תחתון שנפתח מהמרכז --- */
+.qtoolbar .tb-pts{position:relative; display:inline-flex; align-items:center}
+.qtoolbar .tb-pts input{transition:border-color .2s ease}
+.qtoolbar .tb-pts::after{
+  content:""; position:absolute; bottom:-2px; inset-inline-start:38px; width:52px; height:2px;
+  background:var(--teal); transform:scaleX(0); transition:transform .26s cubic-bezier(.2,.8,.2,1)}
+.qtoolbar .tb-pts:focus-within::after{transform:scaleX(1)}
+
+/* --- השאלה הנבחרת: הפס נמתח מלמעלה --- */
+.doc .pq.sel::before{animation:railGrow .34s cubic-bezier(.2,.8,.2,1) both; transform-origin:top}
+@keyframes railGrow{from{transform:scaleY(0)} to{transform:scaleY(1)}}
+@media (prefers-reduced-motion:reduce){
+  .doc .pq.sel::before{animation:none}
+  *,*::before,*::after{animation-duration:.01ms !important; transition-duration:.01ms !important}
+}
 
 .edit-hint{font-size:11.5px; color:var(--muted); margin:0 0 10px; display:flex; align-items:center; gap:7px}
 .edit-hint::before{content:""; width:14px; height:1px; background:var(--teal)}
@@ -836,7 +867,7 @@ input,select,textarea{font-family:var(--body-font); font-size:14px}
         <div class="desk-track" id="deskTrack"><i id="meterFill" style="width:0%"></i></div>
         <div class="desk-time" id="deskTime">אומדן <b>—</b> דק'</div>
         <div class="desk-sp"></div>
-        <button class="tab" id="btnTeacher" aria-pressed="false">👁 מצב מורה</button>
+        <button class="tab" id="btnTeacher" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.6 12S6 5.6 12 5.6 21.4 12 21.4 12 18 18.4 12 18.4 2.6 12 2.6 12Z"/><circle cx="12" cy="12" r="2.9"/></svg>מצב מורה</button>
         <button class="bigbtn secondary" id="btnToProduce">המשך להפקה</button>
       </div>
       <!-- שורה 2: הרכב המבחן בפועל -->
@@ -1575,9 +1606,9 @@ function toolbarHtml(it){
   return `<div class="qtoolbar">
     <span class="qbadges">${b}</span>
     <label class="tb-pts">ניקוד<input type="number" min="1" value="${it.points}" data-role="pts"></label>
-    <button class="mini swap" data-role="swap">🔄 החלפה</button>
-    <button class="mini del" data-role="del">🗑 הסרה</button>
-    <button class="mini undo" data-role="undo"${STATE.undo ? "" : " disabled"}>↩ ביטול</button>
+    <button class="mini swap" data-role="swap"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3.2-3.2M20 16H7l3.2 3.2"/></svg>החלפה</button>
+    <button class="mini del" data-role="del"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h15M9.5 6.5V4.2h5v2.3M6.6 6.5l.9 12.4a1.6 1.6 0 0 0 1.6 1.5h5.8a1.6 1.6 0 0 0 1.6-1.5l.9-12.4M10.4 10.2v6.6M13.6 10.2v6.6"/></svg>הסרה</button>
+    <button class="mini undo" data-role="undo"${STATE.undo ? "" : " disabled"}><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 9.4h9.6a5.6 5.6 0 0 1 0 11.2H8M4.2 9.4l4-4M4.2 9.4l4 4"/></svg>ביטול</button>
   </div>`;
 }
 
@@ -2037,7 +2068,7 @@ function renderMeter(){
   const flags = document.getElementById("flags");
   let html = "";
   if(off){
-    html += `<div class="dflag warn"><span>סכום הניקוד ${sum} אינו שווה ליעד ${target}.</span><button id="btnBalance">⚖ אזן עבורי</button></div>`;
+    html += `<div class="dflag warn"><span>סכום הניקוד ${sum} אינו שווה ליעד ${target}.</span><button id="btnBalance"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M7 20h10M5 8h14M12 4.6 5 8M12 4.6 19 8M2.4 13.2 5 8l2.6 5.2a2.7 2.7 0 0 1-5.2 0ZM16.4 13.2 19 8l2.6 5.2a2.7 2.7 0 0 1-5.2 0Z"/></svg>אזן עבורי</button></div>`;
   } else {
     html += `<div class="dflag ok"><span>סכום הניקוד תואם ליעד בדיוק.</span></div>`;
   }
@@ -2062,6 +2093,7 @@ function renderMeter(){
     });
   });
 }
+const SWAP_ICON = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h13l-3.2-3.2M20 16H7l3.2 3.2"/></svg>';
 /* מחזיר את השאלה שבמפתח הנבחר, ואת המערך שהיא יושבת בו (לצורך שינוי/הסרה) */
 function selItem(sel){
   if(!sel) return null;
@@ -2129,7 +2161,7 @@ function confirmBalance(target){
   back.innerHTML = `<div class="mdl" style="max-width:520px" role="dialog" aria-modal="true">
     <div class="mdl-h"><div><h3>איזון ניקוד ל-${target} נקודות</h3>
       <div class="sub">כך ישתנה הניקוד בפרקים. הניקוד בתוך כל פרק יחולק מחדש בין שאלותיו.</div></div>
-      <button class="x" data-a="close" aria-label="סגירה">✕</button></div>
+      <button class="x" data-a="close" aria-label="סגירה"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 6.4l11.2 11.2M17.6 6.4 6.4 17.6"/></svg></button></div>
     <div class="mdl-b"><table style="width:100%;border-collapse:collapse;font-size:13.5px">
       <thead><tr style="background:var(--panel);color:var(--deep)">
         <th style="padding:8px 10px;text-align:right">פרק</th>
@@ -2182,7 +2214,7 @@ function openSwapDialog({title, current, candidates, tier, onPick, onMore, onRel
   back.innerHTML = `<div class="mdl" role="dialog" aria-modal="true">
     <div class="mdl-h">
       <div><h3>${esc(title)}</h3>${tier?`<div class="sub">מחפש: ${esc(tier)}</div>`:""}</div>
-      <button class="x" data-a="close" aria-label="סגירה">✕</button>
+      <button class="x" data-a="close" aria-label="סגירה"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 6.4l11.2 11.2M17.6 6.4 6.4 17.6"/></svg></button>
     </div>
     <div class="mdl-b">
       <p class="mdl-lbl">עכשיו במבחן:</p>
@@ -2191,7 +2223,7 @@ function openSwapDialog({title, current, candidates, tier, onPick, onMore, onRel
       ${body}
     </div>
     <div class="mdl-f">
-      ${candidates.length?`<button class="ghost" data-a="more">⭯ הצג אחרות</button>`:""}
+      ${candidates.length?`<button class="ghost" data-a="more"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.6A8 8 0 1 1 17.4 6M20 4.4v7.2h-7.2"/></svg>הצג אחרות</button>`:""}
       ${onRelax?`<button class="ghost" data-a="relax">חפש בכל תת-הנושא</button>`:""}
       <span class="grow"></span>
       <button class="ghost" data-a="close">ביטול</button>
@@ -2254,7 +2286,7 @@ async function swapItem(si,qi,relax){
       }
     });
   }catch(e){ alert("החיפוש נכשל: "+e.message); }
-  finally{ if(btn){ btn.disabled=false; btn.textContent="🔄 החלפה"; } }
+  finally{ if(btn){ btn.disabled=false; btn.innerHTML = SWAP_ICON + "החלפה"; } }
 }
 async function swapExpansionItem(si,ti,qi){
   const sec = STATE.exam.sections[si];
@@ -2285,7 +2317,7 @@ async function swapExpansionItem(si,ti,qi){
       }
     });
   }catch(e){ alert("החיפוש נכשל: "+e.message); }
-  finally{ if(btn){ btn.disabled=false; btn.textContent="🔄 החלפה"; } }
+  finally{ if(btn){ btn.disabled=false; btn.innerHTML = SWAP_ICON + "החלפה"; } }
 }
 /* מצב מורה — מחליף את כל המסמך בין תצוגת התלמיד לתצוגה עם תשובות ומחוונים */
 document.getElementById("btnTeacher").addEventListener("click", e=>{
